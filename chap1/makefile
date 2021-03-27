@@ -1,7 +1,7 @@
-a.out: main.o prog1.o slp.o util.o
-	cc -g main.o prog1.o slp.o util.o
+a.out: main.o prog1.o slp.o util.o interpret.o
+	cc -g main.o prog1.o slp.o util.o interpret.o
 
-main.o: main.c slp.h util.h
+main.o: main.c slp.h util.h interpret.h
 	cc -g -c main.c
 
 prog1.o: prog1.c slp.h util.h
@@ -13,5 +13,8 @@ slp.o: slp.c slp.h util.h
 util.o: util.c util.h
 	cc -g -c util.c
 
+interpret.o : interpret.c interpret.h slp.h util.h
+	cc -g -c interpret.c
+
 clean: 
-	rm -f a.out util.o prog1.o slp.o main.o
+	rm -f util.o prog1.o slp.o main.o interpret.o
