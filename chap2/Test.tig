@@ -13,3 +13,11 @@
 
 
 \string"
+
+"test nested comments"
+/** /**sdfsdf/*aa*/"sdf"***//*sdf**/*/
+"test nested comments"
+
+/*/*asas
+sasas
+asas*/*/

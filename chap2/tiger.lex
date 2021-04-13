@@ -7,7 +7,7 @@
 
 #if 0
 #define dbgprintf(tag, yytext, yyleng) \
-do{printf(tag); char *p = yytext; int i; for(i = 0;i<yyleng;i++) printf("%c", *p++);printf("\n");}while(0)
+do{printf(tag": "); char *p = yytext; int i; for(i = 0;i<yyleng;i++) printf("%c", *p++);printf("\n");}while(0)
 #else 
 #define dbgprintf(tag, yytext, yyleng) ;
 #endif
@@ -106,13 +106,15 @@ nil                     {yylval.pos=EM_tokPos; adjust(); return NIL;}
 "|"                     {yylval.pos=EM_tokPos; adjust(); return OR;}
 ":="                    {yylval.pos=EM_tokPos; adjust(); return ASSIGN;}
 
-\"                                       {adjust(); buf_cnt = 0; BEGIN(string); continue;}
-<string>"\\\\"                           {charPos+=yyleng; push_str("\\", "\\" + 1); continue;}
-<string>"\\n"                            {charPos+=yyleng; push_str("\n", "\n" + 1); continue;}
-<string>"\\r"                            {charPos+=yyleng; push_str("\r", "\r" + 1); continue;}
-<string>"\\t"                            {charPos+=yyleng; push_str("\t", "\t" + 1); continue;}
-<string>"\\f"                            {charPos+=yyleng; push_str("\f", "\f" + 1); continue;}
-<string>"\\\""                           {charPos+=yyleng; push_str("\"", "\"" + 1); continue;}
+\"                                      {adjust(); buf_cnt = 0; BEGIN(string); continue;}
+<string>"\\\\"                          {charPos+=yyleng; push_str("\\", "\\" + 1); continue;}
+<string>"\\n"                           {charPos+=yyleng; push_str("\n", "\n" + 1); continue;}
+<string>"\\r"                           {charPos+=yyleng; push_str("\r", "\r" + 1); continue;}
+<string>"\\t"                           {charPos+=yyleng; push_str("\t", "\t" + 1); continue;}
+<string>"\\f"                           {charPos+=yyleng; push_str("\f", "\f" + 1); continue;}
+<string>"\\\""                          {charPos+=yyleng; push_str("\"", "\"" + 1); continue;}
+<string>\\\^([A-Z]|\[|\\|\]|\^|_)       {charPos+=yyleng; char c = (*(yytext+2)-64);
+                                        push_str(&c, &c+1); continue;}
 <string>\\((0[0-9][0-9])|(1[0-1][0-9])|(12[0-7]))       {charPos+=yyleng; char c =
                                                         (*(yytext + 1) - '0') * 100
                                                         + (*(yytext + 2) - '0') * 10
@@ -124,12 +126,14 @@ nil                     {yylval.pos=EM_tokPos; adjust(); return NIL;}
 <string>\"                              {charPos+=yyleng; yylval.sval=newString(buf, buf_cnt);
                                         BEGIN(INITIAL); return STRING;}
 
-"/*"                        {adjust(); commentLevel++; BEGIN(comment); continue;}
-<comment>[^\r\n\*]+         {charPos+=yyleng; continue;}
+<INITIAL,comment>"/*"       {adjust(); commentLevel++; 
+                            if(commentLevel == 1) BEGIN(comment); continue;}
+<comment>[^\r\n\*/]+        {charPos+=yyleng; continue;}
 <comment>\n                 {charPos+=yyleng; EM_newline(); continue;}
 <comment>\r                 {continue;}
 <comment>"*"                {charPos+=yyleng; continue;}
-<comment>"*/"               {charPos+=yyleng; commentLevel--; if(commentLevel == 0) BEGIN(INITIAL); continue;}
+<comment>"*/"               {charPos+=yyleng; commentLevel--;
+                            if(commentLevel == 0) BEGIN(INITIAL); continue;}
 
 \n                          {adjust(); EM_newline(); continue;}
 \r                          {adjust(); continue;}
