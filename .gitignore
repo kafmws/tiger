@@ -1,1 +1,8 @@
 .vscode
+../.editorConfig
+../chap2/gradeMe.sh
+../chap2/lextest
+../chap2/refs/
+../chap2/testcases/
+lex.yy.c[given]
+y.output

@@ -28,16 +28,146 @@ void yyerror(char *s)
   AND OR ASSIGN
   ARRAY IF THEN ELSE WHILE FOR TO DO LET IN END OF 
   BREAK NIL
-  FUNCTION VAR TYPE 
+  FUNCTION VAR TYPE
 
 %start program
 
+%nonassoc ASSIGN
+%left AND OR
+%nonassoc EQ NEQ LT LE GT GE
+%left PLUS MINUS
+%left TIMES DIVIDE
+%left UMINUS
+
+
 %%
 
-program:	exp
+program   :	exp
+          ;
 
-exp:   ID
+exp       : lvalue
+          | callExp
+          | assignExp
+          | ifThenExp
+          | ifThenElseExp
+          | whileExp
+          | BREAK
+          | NIL
+          | LPAREN RPAREN
+          | INT
+          | MINUS INT %prec UMINUS
+          | STRING
+          | exp op exp
+          | forExp
+          | letExp
+          | LPAREN exp RPAREN
+          | arrayExp
+          | recordExp
+          ;
 
+op        : PLUS
+          | MINUS
+          | TIMES
+          | DIVIDE
+          | AND
+          | OR
+          | EQ
+          | NEQ
+          | LT
+          | LE
+          | GT
+          | GE
+          ;
+          
+callExp   : ID LPAREN RPAREN
+          | ID LPAREN expList RPAREN
+          ;
 
+expList   : exp expList_
+          ;
 
-	
+expList_  : /*empty*/
+          | COMMA exp expList_
+          ;
+
+assignExp : lvalue ASSIGN exp
+          ;
+
+ifThenExp : IF exp THEN exp
+          ;
+
+ifThenElseExp : IF exp THEN exp ELSE exp
+              ;
+
+whileExp  : WHILE exp DO exp
+          ;
+
+forExp    : FOR ID ASSIGN exp TO exp DO exp
+          ;
+
+letExp    : LET decs IN expseq END
+          ;
+
+expseq    : /*empty*/
+          | exp expseq_
+          ;
+
+expseq_   : /*empty*/
+          | SEMICOLON exp expseq_
+          ;
+
+decs      : /*empty*/
+          | dec decs
+          ;
+
+dec       : typedec
+          | vardec
+          | funcdec
+          ;
+
+typedec   : TYPE typeid EQ ty
+          ;
+          
+typeid    : ID
+          ;
+
+ty        : typeid
+          | LBRACE tyfields RBRACE
+          | ARRAY OF typeid
+          ;
+
+tyfields  : /*ε*/
+          | ID COLON typeid tyfields_
+          ;
+          
+tyfields_ : /*ε*/
+          | COMMA ID COLON typeid tyfields_
+          ;
+
+arrayExp  : typeid LBRACK exp RBRACK OF exp
+          ;
+
+recordExp : typeid LBRACE eFields RBRACE
+          ;
+
+eFields   : /*empty*/
+          | ID EQ exp eFields_
+          ;
+
+eFields_  : /*empty*/
+          | COMMA ID EQ exp eFields_
+
+vardec    : VAR ID ASSIGN exp
+          | VAR ID COLON typeid ASSIGN exp
+          | VAR ID ASSIGN arrayExp
+          | VAR ID ASSIGN recordExp
+          ;
+
+funcdec   : FUNCTION ID LPAREN tyfields RPAREN EQ exp
+          | FUNCTION ID LPAREN tyfields RPAREN COLON typeid EQ exp
+          ;
+
+lvalue    : ID
+          | lvalue DOT ID
+          | lvalue LBRACK exp RBRACK
+          ;
