@@ -3,6 +3,8 @@
 #include "util.h"
 #include "errormsg.h"
 
+#define YYDEBUG 1
+
 int yylex(void); /* function prototype */
 
 void yyerror(char *s)
@@ -32,142 +34,154 @@ void yyerror(char *s)
 
 %start program
 
-%nonassoc ASSIGN
-%left AND OR
+%left lowPrec
+%left ASSIGN
+%left OR
+%left AND
 %nonassoc EQ NEQ LT LE GT GE
 %left PLUS MINUS
 %left TIMES DIVIDE
 %left UMINUS
 
+%left IFTHEN
+%left ELSE
 
 %%
 
-program   :	exp
-          ;
+program     : exp
+            ;
 
-exp       : lvalue
-          | callExp
-          | assignExp
-          | ifThenExp
-          | ifThenElseExp
-          | whileExp
-          | BREAK
-          | NIL
-          | LPAREN RPAREN
-          | INT
-          | MINUS INT %prec UMINUS
-          | STRING
-          | exp op exp
-          | forExp
-          | letExp
-          | LPAREN exp RPAREN
-          | arrayExp
-          | recordExp
-          ;
+exp         : valExp              %prec lowPrec
+            | stm                 %prec lowPrec
+            | LPAREN RPAREN
+            ;
 
-op        : PLUS
-          | MINUS
-          | TIMES
-          | DIVIDE
-          | AND
-          | OR
-          | EQ
-          | NEQ
-          | LT
-          | LE
-          | GT
-          | GE
-          ;
-          
-callExp   : ID LPAREN RPAREN
-          | ID LPAREN expList RPAREN
-          ;
+/*some exp may no value*/
+valExp      : lvaule
+            | constant
+            | callExp
+            | LPAREN exp SEMICOLON exp expSeq RPAREN
+            | opExp
+            | recordExp
+            | arrayExp
+            | letExp
+            | ifThenElseExp
+            ;
 
-expList   : exp expList_
-          ;
+lvaule      : ID
+            | lvaule DOT ID
+            | lvaule LBRACK valExp RBRACK
+            ;
 
-expList_  : /*empty*/
-          | COMMA exp expList_
-          ;
+constant    : NIL
+            | INT
+            | STRING
+            ;
 
-assignExp : lvalue ASSIGN exp
-          ;
+callExp     : ID LPAREN RPAREN
+            | ID LPAREN paramList RPAREN
+            ;
 
-ifThenExp : IF exp THEN exp
-          ;
+/* valExp{, valExp} (at least 1 valExp) */
+paramList   : valExp
+            | valExp COMMA paramList
 
-ifThenElseExp : IF exp THEN exp ELSE exp
-              ;
+/*() included in parentheses*/
+/*(exp;exp{;exp}) (more than 2 exp)*/
+expSeq      : /*empty*/
+            | SEMICOLON exp expSeq
 
-whileExp  : WHILE exp DO exp
-          ;
+opExp       : MINUS valExp        
+            | valExp AND    valExp
+            | valExp OR     valExp
+            | valExp GT     valExp
+            | valExp GE     valExp
+            | valExp LT     valExp
+            | valExp LE     valExp
+            | valExp EQ     valExp
+            | valExp NEQ    valExp
+            | valExp PLUS   valExp
+            | valExp MINUS  valExp
+            | valExp TIMES  valExp
+            | valExp DIVIDE valExp
+            ;
 
-forExp    : FOR ID ASSIGN exp TO exp DO exp
-          ;
+recordExp   : /*typeid*/ ID LBRACE RBRACE
+            | /*typeid*/ ID LBRACE fieldList RBRACE
+            ;
 
-letExp    : LET decs IN expseq END
-          ;
+fieldList   : ID ASSIGN valExp
+            | ID ASSIGN valExp COMMA fieldList
+            ;
 
-expseq    : /*empty*/
-          | exp expseq_
-          ;
+arrayExp    : /*typeid*/ ID LBRACK valExp RBRACK OF valExp    %prec lowPrec
+            ;
 
-expseq_   : /*empty*/
-          | SEMICOLON exp expseq_
-          ;
+letExp      : LET IN END
+            | LET IN exp expList END
+            | LET decs IN END
+            | LET decs IN exp expList END
+            ;
 
-decs      : /*empty*/
-          | dec decs
-          ;
+decs        : dec
+            | dec decs
+            ;
 
-dec       : typedec
-          | vardec
-          | funcdec
-          ;
+dec         : typeDec
+            | varDec
+            | funcDec
+            ;
 
-typedec   : TYPE typeid EQ ty
-          ;
-          
-typeid    : ID
-          ;
+typeDec     : TYPE /*typeid*/ ID ASSIGN ty
+            ;
 
-ty        : typeid
-          | LBRACE tyfields RBRACE
-          | ARRAY OF typeid
-          ;
+ty          : /*typeid*/ ID
+            | LBRACE RBRACE
+            | LBRACE ID COLON /*typeid*/ ID fieldDecList RBRACE
+            | ARRAY OF /*typeid*/ ID
+            ;
 
-tyfields  : /*ε*/
-          | ID COLON typeid tyfields_
-          ;
-          
-tyfields_ : /*ε*/
-          | COMMA ID COLON typeid tyfields_
-          ;
+fieldDecList: /*empty*/
+            | COMMA ID COLON /*typeid*/ ID fieldDecList
+            ;
 
-arrayExp  : typeid LBRACK exp RBRACK OF exp
-          ;
+varDec      : VAR ID ASSIGN valExp
+            | VAR ID COLON /*typeid*/ ID ASSIGN valExp
+            ;
 
-recordExp : typeid LBRACE eFields RBRACE
-          ;
+funcDec     : FUNCTION ID LPAREN RPAREN EQ exp
+            | FUNCTION ID LPAREN ID COLON /*typeid*/ ID paramDecList RPAREN EQ exp
+            | FUNCTION ID LPAREN RPAREN COLON /*typeid*/ ID EQ valExp
+            | FUNCTION ID LPAREN ID COLON /*typeid*/ ID paramDecList RPAREN COLON /*typeid*/ ID EQ valExp
+            ;
 
-eFields   : /*empty*/
-          | ID EQ exp eFields_
-          ;
+paramDecList: /*empty*/
+            | COMMA ID COLON /*typeid*/ ID paramList
+            ;
 
-eFields_  : /*empty*/
-          | COMMA ID EQ exp eFields_
+expList     : /*empty*/
+            | SEMICOLON exp expList
+            ;
 
-vardec    : VAR ID ASSIGN exp
-          | VAR ID COLON typeid ASSIGN exp
-          | VAR ID ASSIGN arrayExp
-          | VAR ID ASSIGN recordExp
-          ;
+ifThenElseExp:IF valExp THEN valExp ELSE valExp %prec ELSE
+            ;
 
-funcdec   : FUNCTION ID LPAREN tyfields RPAREN EQ exp
-          | FUNCTION ID LPAREN tyfields RPAREN COLON typeid EQ exp
-          ;
+/*Absolutely no value*/
+stm         : assignStm
+            | ifThenStm
+            | whileStm
+            | BREAK
+            | forStm
+            ;
 
-lvalue    : ID
-          | lvalue DOT ID
-          | lvalue LBRACK exp RBRACK
-          ;
+assignStm   : lvaule ASSIGN valExp
+            ;
+
+ifThenStm   : IF valExp THEN valExp %prec IFTHEN
+            ;
+
+whileStm    : WHILE valExp DO exp /*produce no value exp*/
+            ;
+
+forStm      : FOR ID ASSIGN valExp TO valExp DO exp /*produce no value exp*/
+            ;

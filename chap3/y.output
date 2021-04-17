@@ -1,42 +1,3276 @@
+Terminals unused in grammar
 
-state 0
-	$accept : _program $end 
-
-	ID  shift 3
-	.  error
-
-	program  goto 1
-	exp  goto 2
-
-state 1
-	$accept :  program_$end 
-
-	$end  accept
-	.  error
+    UMINUS
 
 
-state 2
-	program :  exp_    (1)
-
-	.  reduce 1
+State 1 conflicts: 1 shift/reduce
 
 
-state 3
-	exp :  ID_    (2)
+Grammar
 
-	.  reduce 2
+    0 $accept: program $end
+
+    1 program: exp
+
+    2 exp: valExp
+    3    | stm
+    4    | LPAREN RPAREN
+
+    5 valExp: lvaule
+    6       | constant
+    7       | callExp
+    8       | LPAREN exp SEMICOLON exp expSeq RPAREN
+    9       | opExp
+   10       | recordExp
+   11       | arrayExp
+   12       | letExp
+   13       | ifThenElseExp
+
+   14 lvaule: ID
+   15       | lvaule DOT ID
+   16       | lvaule LBRACK valExp RBRACK
+
+   17 constant: NIL
+   18         | INT
+   19         | STRING
+
+   20 callExp: ID LPAREN RPAREN
+   21        | ID LPAREN paramList RPAREN
+
+   22 paramList: valExp
+   23          | valExp COMMA paramList
+
+   24 expSeq: %empty
+   25       | SEMICOLON exp expSeq
+
+   26 opExp: MINUS valExp
+   27      | valExp AND valExp
+   28      | valExp OR valExp
+   29      | valExp GT valExp
+   30      | valExp GE valExp
+   31      | valExp LT valExp
+   32      | valExp LE valExp
+   33      | valExp EQ valExp
+   34      | valExp NEQ valExp
+   35      | valExp PLUS valExp
+   36      | valExp MINUS valExp
+   37      | valExp TIMES valExp
+   38      | valExp DIVIDE valExp
+
+   39 recordExp: ID LBRACE RBRACE
+   40          | ID LBRACE fieldList RBRACE
+
+   41 fieldList: ID ASSIGN valExp
+   42          | ID ASSIGN valExp COMMA fieldList
+
+   43 arrayExp: ID LBRACK valExp RBRACK OF valExp
+
+   44 letExp: LET IN END
+   45       | LET IN exp expList END
+   46       | LET decs IN END
+   47       | LET decs IN exp expList END
+
+   48 decs: dec
+   49     | dec decs
+
+   50 dec: typeDec
+   51    | varDec
+   52    | funcDec
+
+   53 typeDec: TYPE ID ASSIGN ty
+
+   54 ty: ID
+   55   | LBRACE RBRACE
+   56   | LBRACE ID COLON ID fieldDecList RBRACE
+   57   | ARRAY OF ID
+
+   58 fieldDecList: %empty
+   59             | COMMA ID COLON ID fieldDecList
+
+   60 varDec: VAR ID ASSIGN valExp
+   61       | VAR ID COLON ID ASSIGN valExp
+
+   62 funcDec: FUNCTION ID LPAREN RPAREN EQ exp
+   63        | FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN EQ exp
+   64        | FUNCTION ID LPAREN RPAREN COLON ID EQ valExp
+   65        | FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN COLON ID EQ valExp
+
+   66 paramDecList: %empty
+   67             | COMMA ID COLON ID paramList
+
+   68 expList: %empty
+   69        | SEMICOLON exp expList
+
+   70 ifThenElseExp: IF valExp THEN valExp ELSE valExp
+
+   71 stm: assignStm
+   72    | ifThenStm
+   73    | whileStm
+   74    | BREAK
+   75    | forStm
+
+   76 assignStm: lvaule ASSIGN valExp
+
+   77 ifThenStm: IF valExp THEN valExp
+
+   78 whileStm: WHILE valExp DO exp
+
+   79 forStm: FOR ID ASSIGN valExp TO valExp DO exp
 
 
-45/3000 terminals, 2/1000 nonterminals
-3/2000 grammar rules, 4/5000 states
-0 shift/reduce, 0 reduce/reduce conflicts reported
-3/1400 working sets used
-memory: states,etc. 30/40000, parser 1/70000
-3/600 distinct lookahead sets
-0 extra closures
-1 shift entries, 1 exceptions
-2 goto entries
-0 entries saved by goto default
-Optimizer space used: input 6/40000, output 3/70000
-3 table entries, 0 zero
-maximum spread: 257, maximum offset: 257
+Terminals, with rules where they appear
+
+    $end (0) 0
+    error (256)
+    ID <sval> (258) 14 15 20 21 39 40 41 42 43 53 54 56 57 59 60 61 62 63 64 65 67 79
+    STRING <sval> (259) 19
+    INT <ival> (260) 18
+    COMMA (261) 23 42 59 67
+    COLON (262) 56 59 61 63 64 65 67
+    SEMICOLON (263) 8 25 69
+    LPAREN (264) 4 8 20 21 62 63 64 65
+    RPAREN (265) 4 8 20 21 62 63 64 65
+    LBRACK (266) 16 43
+    RBRACK (267) 16 43
+    LBRACE (268) 39 40 55 56
+    RBRACE (269) 39 40 55 56
+    DOT (270) 15
+    PLUS (271) 35
+    MINUS (272) 26 36
+    TIMES (273) 37
+    DIVIDE (274) 38
+    EQ (275) 33 62 63 64 65
+    NEQ (276) 34
+    LT (277) 31
+    LE (278) 32
+    GT (279) 29
+    GE (280) 30
+    AND (281) 27
+    OR (282) 28
+    ASSIGN (283) 41 42 53 60 61 76 79
+    ARRAY (284) 57
+    IF (285) 70 77
+    THEN (286) 70 77
+    ELSE (287) 70
+    WHILE (288) 78
+    FOR (289) 79
+    TO (290) 79
+    DO (291) 78 79
+    LET (292) 44 45 46 47
+    IN (293) 44 45 46 47
+    END (294) 44 45 46 47
+    OF (295) 43 57
+    BREAK (296) 74
+    NIL (297) 17
+    FUNCTION (298) 62 63 64 65
+    VAR (299) 60 61
+    TYPE (300) 53
+    lowPrec (301)
+    UMINUS (302)
+    IFTHEN (303)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (49)
+        on left: 0
+    program (50)
+        on left: 1
+        on right: 0
+    exp (51)
+        on left: 2 3 4
+        on right: 1 8 25 45 47 62 63 69 78 79
+    valExp (52)
+        on left: 5 6 7 8 9 10 11 12 13
+        on right: 2 16 22 23 26 27 28 29 30 31 32 33 34 35 36 37 38 41 42 43 60 61 64 65 70 76 77 78 79
+    lvaule (53)
+        on left: 14 15 16
+        on right: 5 15 16 76
+    constant (54)
+        on left: 17 18 19
+        on right: 6
+    callExp (55)
+        on left: 20 21
+        on right: 7
+    paramList (56)
+        on left: 22 23
+        on right: 21 23 67
+    expSeq (57)
+        on left: 24 25
+        on right: 8 25
+    opExp (58)
+        on left: 26 27 28 29 30 31 32 33 34 35 36 37 38
+        on right: 9
+    recordExp (59)
+        on left: 39 40
+        on right: 10
+    fieldList (60)
+        on left: 41 42
+        on right: 40 42
+    arrayExp (61)
+        on left: 43
+        on right: 11
+    letExp (62)
+        on left: 44 45 46 47
+        on right: 12
+    decs (63)
+        on left: 48 49
+        on right: 46 47 49
+    dec (64)
+        on left: 50 51 52
+        on right: 48 49
+    typeDec (65)
+        on left: 53
+        on right: 50
+    ty (66)
+        on left: 54 55 56 57
+        on right: 53
+    fieldDecList (67)
+        on left: 58 59
+        on right: 56 59
+    varDec (68)
+        on left: 60 61
+        on right: 51
+    funcDec (69)
+        on left: 62 63 64 65
+        on right: 52
+    paramDecList (70)
+        on left: 66 67
+        on right: 63 65
+    expList (71)
+        on left: 68 69
+        on right: 45 47 69
+    ifThenElseExp (72)
+        on left: 70
+        on right: 13
+    stm (73)
+        on left: 71 72 73 74 75
+        on right: 3
+    assignStm (74)
+        on left: 76
+        on right: 71
+    ifThenStm (75)
+        on left: 77
+        on right: 72
+    whileStm (76)
+        on left: 78
+        on right: 73
+    forStm (77)
+        on left: 79
+        on right: 75
+
+
+State 0
+
+    0 $accept: . program $end
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    program        go to state 12
+    exp            go to state 13
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 1
+
+   14 lvaule: ID .
+   20 callExp: ID . LPAREN RPAREN
+   21        | ID . LPAREN paramList RPAREN
+   39 recordExp: ID . LBRACE RBRACE
+   40          | ID . LBRACE fieldList RBRACE
+   43 arrayExp: ID . LBRACK valExp RBRACK OF valExp
+
+    LPAREN  shift, and go to state 28
+    LBRACK  shift, and go to state 29
+    LBRACE  shift, and go to state 30
+
+    LBRACK    [reduce using rule 14 (lvaule)]
+    $default  reduce using rule 14 (lvaule)
+
+
+State 2
+
+   19 constant: STRING .
+
+    $default  reduce using rule 19 (constant)
+
+
+State 3
+
+   18 constant: INT .
+
+    $default  reduce using rule 18 (constant)
+
+
+State 4
+
+    4 exp: LPAREN . RPAREN
+    8 valExp: LPAREN . exp SEMICOLON exp expSeq RPAREN
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    RPAREN  shift, and go to state 31
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 32
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 5
+
+   26 opExp: MINUS . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 35
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 6
+
+   70 ifThenElseExp: IF . valExp THEN valExp ELSE valExp
+   77 ifThenStm: IF . valExp THEN valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 37
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 7
+
+   78 whileStm: WHILE . valExp DO exp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 38
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 8
+
+   79 forStm: FOR . ID ASSIGN valExp TO valExp DO exp
+
+    ID  shift, and go to state 39
+
+
+State 9
+
+   44 letExp: LET . IN END
+   45       | LET . IN exp expList END
+   46       | LET . decs IN END
+   47       | LET . decs IN exp expList END
+
+    IN        shift, and go to state 40
+    FUNCTION  shift, and go to state 41
+    VAR       shift, and go to state 42
+    TYPE      shift, and go to state 43
+
+    decs     go to state 44
+    dec      go to state 45
+    typeDec  go to state 46
+    varDec   go to state 47
+    funcDec  go to state 48
+
+
+State 10
+
+   74 stm: BREAK .
+
+    $default  reduce using rule 74 (stm)
+
+
+State 11
+
+   17 constant: NIL .
+
+    $default  reduce using rule 17 (constant)
+
+
+State 12
+
+    0 $accept: program . $end
+
+    $end  shift, and go to state 49
+
+
+State 13
+
+    1 program: exp .
+
+    $default  reduce using rule 1 (program)
+
+
+State 14
+
+    2 exp: valExp .
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+    $default  reduce using rule 2 (exp)
+
+
+State 15
+
+    5 valExp: lvaule .
+   15 lvaule: lvaule . DOT ID
+   16       | lvaule . LBRACK valExp RBRACK
+   76 assignStm: lvaule . ASSIGN valExp
+
+    LBRACK  shift, and go to state 62
+    DOT     shift, and go to state 63
+    ASSIGN  shift, and go to state 64
+
+    $default  reduce using rule 5 (valExp)
+
+
+State 16
+
+    6 valExp: constant .
+
+    $default  reduce using rule 6 (valExp)
+
+
+State 17
+
+    7 valExp: callExp .
+
+    $default  reduce using rule 7 (valExp)
+
+
+State 18
+
+    9 valExp: opExp .
+
+    $default  reduce using rule 9 (valExp)
+
+
+State 19
+
+   10 valExp: recordExp .
+
+    $default  reduce using rule 10 (valExp)
+
+
+State 20
+
+   11 valExp: arrayExp .
+
+    $default  reduce using rule 11 (valExp)
+
+
+State 21
+
+   12 valExp: letExp .
+
+    $default  reduce using rule 12 (valExp)
+
+
+State 22
+
+   13 valExp: ifThenElseExp .
+
+    $default  reduce using rule 13 (valExp)
+
+
+State 23
+
+    3 exp: stm .
+
+    $default  reduce using rule 3 (exp)
+
+
+State 24
+
+   71 stm: assignStm .
+
+    $default  reduce using rule 71 (stm)
+
+
+State 25
+
+   72 stm: ifThenStm .
+
+    $default  reduce using rule 72 (stm)
+
+
+State 26
+
+   73 stm: whileStm .
+
+    $default  reduce using rule 73 (stm)
+
+
+State 27
+
+   75 stm: forStm .
+
+    $default  reduce using rule 75 (stm)
+
+
+State 28
+
+   20 callExp: ID LPAREN . RPAREN
+   21        | ID LPAREN . paramList RPAREN
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    RPAREN  shift, and go to state 65
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 66
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    paramList      go to state 67
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 29
+
+   43 arrayExp: ID LBRACK . valExp RBRACK OF valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 68
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 30
+
+   39 recordExp: ID LBRACE . RBRACE
+   40          | ID LBRACE . fieldList RBRACE
+
+    ID      shift, and go to state 69
+    RBRACE  shift, and go to state 70
+
+    fieldList  go to state 71
+
+
+State 31
+
+    4 exp: LPAREN RPAREN .
+
+    $default  reduce using rule 4 (exp)
+
+
+State 32
+
+    8 valExp: LPAREN exp . SEMICOLON exp expSeq RPAREN
+
+    SEMICOLON  shift, and go to state 72
+
+
+State 33
+
+    8 valExp: LPAREN . exp SEMICOLON exp expSeq RPAREN
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 32
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 34
+
+   70 ifThenElseExp: IF . valExp THEN valExp ELSE valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 73
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 35
+
+   26 opExp: MINUS valExp .
+   27      | valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+
+    $default  reduce using rule 26 (opExp)
+
+
+State 36
+
+    5 valExp: lvaule .
+   15 lvaule: lvaule . DOT ID
+   16       | lvaule . LBRACK valExp RBRACK
+
+    LBRACK  shift, and go to state 62
+    DOT     shift, and go to state 63
+
+    $default  reduce using rule 5 (valExp)
+
+
+State 37
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   70 ifThenElseExp: IF valExp . THEN valExp ELSE valExp
+   77 ifThenStm: IF valExp . THEN valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+    THEN    shift, and go to state 74
+
+
+State 38
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   78 whileStm: WHILE valExp . DO exp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+    DO      shift, and go to state 75
+
+
+State 39
+
+   79 forStm: FOR ID . ASSIGN valExp TO valExp DO exp
+
+    ASSIGN  shift, and go to state 76
+
+
+State 40
+
+   44 letExp: LET IN . END
+   45       | LET IN . exp expList END
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    END     shift, and go to state 77
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 78
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 41
+
+   62 funcDec: FUNCTION . ID LPAREN RPAREN EQ exp
+   63        | FUNCTION . ID LPAREN ID COLON ID paramDecList RPAREN EQ exp
+   64        | FUNCTION . ID LPAREN RPAREN COLON ID EQ valExp
+   65        | FUNCTION . ID LPAREN ID COLON ID paramDecList RPAREN COLON ID EQ valExp
+
+    ID  shift, and go to state 79
+
+
+State 42
+
+   60 varDec: VAR . ID ASSIGN valExp
+   61       | VAR . ID COLON ID ASSIGN valExp
+
+    ID  shift, and go to state 80
+
+
+State 43
+
+   53 typeDec: TYPE . ID ASSIGN ty
+
+    ID  shift, and go to state 81
+
+
+State 44
+
+   46 letExp: LET decs . IN END
+   47       | LET decs . IN exp expList END
+
+    IN  shift, and go to state 82
+
+
+State 45
+
+   48 decs: dec .
+   49     | dec . decs
+
+    FUNCTION  shift, and go to state 41
+    VAR       shift, and go to state 42
+    TYPE      shift, and go to state 43
+
+    $default  reduce using rule 48 (decs)
+
+    decs     go to state 83
+    dec      go to state 45
+    typeDec  go to state 46
+    varDec   go to state 47
+    funcDec  go to state 48
+
+
+State 46
+
+   50 dec: typeDec .
+
+    $default  reduce using rule 50 (dec)
+
+
+State 47
+
+   51 dec: varDec .
+
+    $default  reduce using rule 51 (dec)
+
+
+State 48
+
+   52 dec: funcDec .
+
+    $default  reduce using rule 52 (dec)
+
+
+State 49
+
+    0 $accept: program $end .
+
+    $default  accept
+
+
+State 50
+
+   35 opExp: valExp PLUS . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 84
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 51
+
+   36 opExp: valExp MINUS . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 85
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 52
+
+   37 opExp: valExp TIMES . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 86
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 53
+
+   38 opExp: valExp DIVIDE . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 87
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 54
+
+   33 opExp: valExp EQ . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 88
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 55
+
+   34 opExp: valExp NEQ . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 89
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 56
+
+   31 opExp: valExp LT . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 90
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 57
+
+   32 opExp: valExp LE . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 91
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 58
+
+   29 opExp: valExp GT . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 92
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 59
+
+   30 opExp: valExp GE . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 93
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 60
+
+   27 opExp: valExp AND . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 94
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 61
+
+   28 opExp: valExp OR . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 95
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 62
+
+   16 lvaule: lvaule LBRACK . valExp RBRACK
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 96
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 63
+
+   15 lvaule: lvaule DOT . ID
+
+    ID  shift, and go to state 97
+
+
+State 64
+
+   76 assignStm: lvaule ASSIGN . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 98
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 65
+
+   20 callExp: ID LPAREN RPAREN .
+
+    $default  reduce using rule 20 (callExp)
+
+
+State 66
+
+   22 paramList: valExp .
+   23          | valExp . COMMA paramList
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    COMMA   shift, and go to state 99
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+    $default  reduce using rule 22 (paramList)
+
+
+State 67
+
+   21 callExp: ID LPAREN paramList . RPAREN
+
+    RPAREN  shift, and go to state 100
+
+
+State 68
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   43 arrayExp: ID LBRACK valExp . RBRACK OF valExp
+
+    RBRACK  shift, and go to state 101
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+
+State 69
+
+   41 fieldList: ID . ASSIGN valExp
+   42          | ID . ASSIGN valExp COMMA fieldList
+
+    ASSIGN  shift, and go to state 102
+
+
+State 70
+
+   39 recordExp: ID LBRACE RBRACE .
+
+    $default  reduce using rule 39 (recordExp)
+
+
+State 71
+
+   40 recordExp: ID LBRACE fieldList . RBRACE
+
+    RBRACE  shift, and go to state 103
+
+
+State 72
+
+    8 valExp: LPAREN exp SEMICOLON . exp expSeq RPAREN
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 104
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 73
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   70 ifThenElseExp: IF valExp . THEN valExp ELSE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+    THEN    shift, and go to state 105
+
+
+State 74
+
+   70 ifThenElseExp: IF valExp THEN . valExp ELSE valExp
+   77 ifThenStm: IF valExp THEN . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 106
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 75
+
+   78 whileStm: WHILE valExp DO . exp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 107
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 76
+
+   79 forStm: FOR ID ASSIGN . valExp TO valExp DO exp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 108
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 77
+
+   44 letExp: LET IN END .
+
+    $default  reduce using rule 44 (letExp)
+
+
+State 78
+
+   45 letExp: LET IN exp . expList END
+
+    SEMICOLON  shift, and go to state 109
+
+    $default  reduce using rule 68 (expList)
+
+    expList  go to state 110
+
+
+State 79
+
+   62 funcDec: FUNCTION ID . LPAREN RPAREN EQ exp
+   63        | FUNCTION ID . LPAREN ID COLON ID paramDecList RPAREN EQ exp
+   64        | FUNCTION ID . LPAREN RPAREN COLON ID EQ valExp
+   65        | FUNCTION ID . LPAREN ID COLON ID paramDecList RPAREN COLON ID EQ valExp
+
+    LPAREN  shift, and go to state 111
+
+
+State 80
+
+   60 varDec: VAR ID . ASSIGN valExp
+   61       | VAR ID . COLON ID ASSIGN valExp
+
+    COLON   shift, and go to state 112
+    ASSIGN  shift, and go to state 113
+
+
+State 81
+
+   53 typeDec: TYPE ID . ASSIGN ty
+
+    ASSIGN  shift, and go to state 114
+
+
+State 82
+
+   46 letExp: LET decs IN . END
+   47       | LET decs IN . exp expList END
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    END     shift, and go to state 115
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 116
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 83
+
+   49 decs: dec decs .
+
+    $default  reduce using rule 49 (decs)
+
+
+State 84
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   35      | valExp PLUS valExp .
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+
+    $default  reduce using rule 35 (opExp)
+
+
+State 85
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   36      | valExp MINUS valExp .
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+
+    $default  reduce using rule 36 (opExp)
+
+
+State 86
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   37      | valExp TIMES valExp .
+   38      | valExp . DIVIDE valExp
+
+    $default  reduce using rule 37 (opExp)
+
+
+State 87
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   38      | valExp DIVIDE valExp .
+
+    $default  reduce using rule 38 (opExp)
+
+
+State 88
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   33      | valExp EQ valExp .
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LT   error (nonassociative)
+    LE   error (nonassociative)
+    GT   error (nonassociative)
+    GE   error (nonassociative)
+
+    $default  reduce using rule 33 (opExp)
+
+
+State 89
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   34      | valExp NEQ valExp .
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LT   error (nonassociative)
+    LE   error (nonassociative)
+    GT   error (nonassociative)
+    GE   error (nonassociative)
+
+    $default  reduce using rule 34 (opExp)
+
+
+State 90
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   31      | valExp LT valExp .
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LT   error (nonassociative)
+    LE   error (nonassociative)
+    GT   error (nonassociative)
+    GE   error (nonassociative)
+
+    $default  reduce using rule 31 (opExp)
+
+
+State 91
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   32      | valExp LE valExp .
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LT   error (nonassociative)
+    LE   error (nonassociative)
+    GT   error (nonassociative)
+    GE   error (nonassociative)
+
+    $default  reduce using rule 32 (opExp)
+
+
+State 92
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   29      | valExp GT valExp .
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LT   error (nonassociative)
+    LE   error (nonassociative)
+    GT   error (nonassociative)
+    GE   error (nonassociative)
+
+    $default  reduce using rule 29 (opExp)
+
+
+State 93
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   30      | valExp GE valExp .
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+
+    EQ   error (nonassociative)
+    NEQ  error (nonassociative)
+    LT   error (nonassociative)
+    LE   error (nonassociative)
+    GT   error (nonassociative)
+    GE   error (nonassociative)
+
+    $default  reduce using rule 30 (opExp)
+
+
+State 94
+
+   27 opExp: valExp . AND valExp
+   27      | valExp AND valExp .
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+
+    $default  reduce using rule 27 (opExp)
+
+
+State 95
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   28      | valExp OR valExp .
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+
+    $default  reduce using rule 28 (opExp)
+
+
+State 96
+
+   16 lvaule: lvaule LBRACK valExp . RBRACK
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+
+    RBRACK  shift, and go to state 117
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+
+State 97
+
+   15 lvaule: lvaule DOT ID .
+
+    $default  reduce using rule 15 (lvaule)
+
+
+State 98
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   76 assignStm: lvaule ASSIGN valExp .
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+    $default  reduce using rule 76 (assignStm)
+
+
+State 99
+
+   23 paramList: valExp COMMA . paramList
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 66
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    paramList      go to state 118
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 100
+
+   21 callExp: ID LPAREN paramList RPAREN .
+
+    $default  reduce using rule 21 (callExp)
+
+
+State 101
+
+   43 arrayExp: ID LBRACK valExp RBRACK . OF valExp
+
+    OF  shift, and go to state 119
+
+
+State 102
+
+   41 fieldList: ID ASSIGN . valExp
+   42          | ID ASSIGN . valExp COMMA fieldList
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 120
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 103
+
+   40 recordExp: ID LBRACE fieldList RBRACE .
+
+    $default  reduce using rule 40 (recordExp)
+
+
+State 104
+
+    8 valExp: LPAREN exp SEMICOLON exp . expSeq RPAREN
+
+    SEMICOLON  shift, and go to state 121
+
+    $default  reduce using rule 24 (expSeq)
+
+    expSeq  go to state 122
+
+
+State 105
+
+   70 ifThenElseExp: IF valExp THEN . valExp ELSE valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 123
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 106
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   70 ifThenElseExp: IF valExp THEN valExp . ELSE valExp
+   77 ifThenStm: IF valExp THEN valExp .
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+    ELSE    shift, and go to state 124
+
+    $default  reduce using rule 77 (ifThenStm)
+
+
+State 107
+
+   78 whileStm: WHILE valExp DO exp .
+
+    $default  reduce using rule 78 (whileStm)
+
+
+State 108
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   79 forStm: FOR ID ASSIGN valExp . TO valExp DO exp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+    TO      shift, and go to state 125
+
+
+State 109
+
+   69 expList: SEMICOLON . exp expList
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 126
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 110
+
+   45 letExp: LET IN exp expList . END
+
+    END  shift, and go to state 127
+
+
+State 111
+
+   62 funcDec: FUNCTION ID LPAREN . RPAREN EQ exp
+   63        | FUNCTION ID LPAREN . ID COLON ID paramDecList RPAREN EQ exp
+   64        | FUNCTION ID LPAREN . RPAREN COLON ID EQ valExp
+   65        | FUNCTION ID LPAREN . ID COLON ID paramDecList RPAREN COLON ID EQ valExp
+
+    ID      shift, and go to state 128
+    RPAREN  shift, and go to state 129
+
+
+State 112
+
+   61 varDec: VAR ID COLON . ID ASSIGN valExp
+
+    ID  shift, and go to state 130
+
+
+State 113
+
+   60 varDec: VAR ID ASSIGN . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 131
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 114
+
+   53 typeDec: TYPE ID ASSIGN . ty
+
+    ID      shift, and go to state 132
+    LBRACE  shift, and go to state 133
+    ARRAY   shift, and go to state 134
+
+    ty  go to state 135
+
+
+State 115
+
+   46 letExp: LET decs IN END .
+
+    $default  reduce using rule 46 (letExp)
+
+
+State 116
+
+   47 letExp: LET decs IN exp . expList END
+
+    SEMICOLON  shift, and go to state 109
+
+    $default  reduce using rule 68 (expList)
+
+    expList  go to state 136
+
+
+State 117
+
+   16 lvaule: lvaule LBRACK valExp RBRACK .
+
+    $default  reduce using rule 16 (lvaule)
+
+
+State 118
+
+   23 paramList: valExp COMMA paramList .
+
+    $default  reduce using rule 23 (paramList)
+
+
+State 119
+
+   43 arrayExp: ID LBRACK valExp RBRACK OF . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 137
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 120
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   41 fieldList: ID ASSIGN valExp .
+   42          | ID ASSIGN valExp . COMMA fieldList
+
+    COMMA   shift, and go to state 138
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+    $default  reduce using rule 41 (fieldList)
+
+
+State 121
+
+   25 expSeq: SEMICOLON . exp expSeq
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 139
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 122
+
+    8 valExp: LPAREN exp SEMICOLON exp expSeq . RPAREN
+
+    RPAREN  shift, and go to state 140
+
+
+State 123
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   70 ifThenElseExp: IF valExp THEN valExp . ELSE valExp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+    ELSE    shift, and go to state 124
+
+
+State 124
+
+   70 ifThenElseExp: IF valExp THEN valExp ELSE . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 141
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 125
+
+   79 forStm: FOR ID ASSIGN valExp TO . valExp DO exp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 142
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 126
+
+   69 expList: SEMICOLON exp . expList
+
+    SEMICOLON  shift, and go to state 109
+
+    $default  reduce using rule 68 (expList)
+
+    expList  go to state 143
+
+
+State 127
+
+   45 letExp: LET IN exp expList END .
+
+    $default  reduce using rule 45 (letExp)
+
+
+State 128
+
+   63 funcDec: FUNCTION ID LPAREN ID . COLON ID paramDecList RPAREN EQ exp
+   65        | FUNCTION ID LPAREN ID . COLON ID paramDecList RPAREN COLON ID EQ valExp
+
+    COLON  shift, and go to state 144
+
+
+State 129
+
+   62 funcDec: FUNCTION ID LPAREN RPAREN . EQ exp
+   64        | FUNCTION ID LPAREN RPAREN . COLON ID EQ valExp
+
+    COLON  shift, and go to state 145
+    EQ     shift, and go to state 146
+
+
+State 130
+
+   61 varDec: VAR ID COLON ID . ASSIGN valExp
+
+    ASSIGN  shift, and go to state 147
+
+
+State 131
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   60 varDec: VAR ID ASSIGN valExp .
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+    $default  reduce using rule 60 (varDec)
+
+
+State 132
+
+   54 ty: ID .
+
+    $default  reduce using rule 54 (ty)
+
+
+State 133
+
+   55 ty: LBRACE . RBRACE
+   56   | LBRACE . ID COLON ID fieldDecList RBRACE
+
+    ID      shift, and go to state 148
+    RBRACE  shift, and go to state 149
+
+
+State 134
+
+   57 ty: ARRAY . OF ID
+
+    OF  shift, and go to state 150
+
+
+State 135
+
+   53 typeDec: TYPE ID ASSIGN ty .
+
+    $default  reduce using rule 53 (typeDec)
+
+
+State 136
+
+   47 letExp: LET decs IN exp expList . END
+
+    END  shift, and go to state 151
+
+
+State 137
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   43 arrayExp: ID LBRACK valExp RBRACK OF valExp .
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+    $default  reduce using rule 43 (arrayExp)
+
+
+State 138
+
+   42 fieldList: ID ASSIGN valExp COMMA . fieldList
+
+    ID  shift, and go to state 69
+
+    fieldList  go to state 152
+
+
+State 139
+
+   25 expSeq: SEMICOLON exp . expSeq
+
+    SEMICOLON  shift, and go to state 121
+
+    $default  reduce using rule 24 (expSeq)
+
+    expSeq  go to state 153
+
+
+State 140
+
+    8 valExp: LPAREN exp SEMICOLON exp expSeq RPAREN .
+
+    $default  reduce using rule 8 (valExp)
+
+
+State 141
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   70 ifThenElseExp: IF valExp THEN valExp ELSE valExp .
+
+    $default  reduce using rule 70 (ifThenElseExp)
+
+
+State 142
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   79 forStm: FOR ID ASSIGN valExp TO valExp . DO exp
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+    DO      shift, and go to state 154
+
+
+State 143
+
+   69 expList: SEMICOLON exp expList .
+
+    $default  reduce using rule 69 (expList)
+
+
+State 144
+
+   63 funcDec: FUNCTION ID LPAREN ID COLON . ID paramDecList RPAREN EQ exp
+   65        | FUNCTION ID LPAREN ID COLON . ID paramDecList RPAREN COLON ID EQ valExp
+
+    ID  shift, and go to state 155
+
+
+State 145
+
+   64 funcDec: FUNCTION ID LPAREN RPAREN COLON . ID EQ valExp
+
+    ID  shift, and go to state 156
+
+
+State 146
+
+   62 funcDec: FUNCTION ID LPAREN RPAREN EQ . exp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 157
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 147
+
+   61 varDec: VAR ID COLON ID ASSIGN . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 158
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 148
+
+   56 ty: LBRACE ID . COLON ID fieldDecList RBRACE
+
+    COLON  shift, and go to state 159
+
+
+State 149
+
+   55 ty: LBRACE RBRACE .
+
+    $default  reduce using rule 55 (ty)
+
+
+State 150
+
+   57 ty: ARRAY OF . ID
+
+    ID  shift, and go to state 160
+
+
+State 151
+
+   47 letExp: LET decs IN exp expList END .
+
+    $default  reduce using rule 47 (letExp)
+
+
+State 152
+
+   42 fieldList: ID ASSIGN valExp COMMA fieldList .
+
+    $default  reduce using rule 42 (fieldList)
+
+
+State 153
+
+   25 expSeq: SEMICOLON exp expSeq .
+
+    $default  reduce using rule 25 (expSeq)
+
+
+State 154
+
+   79 forStm: FOR ID ASSIGN valExp TO valExp DO . exp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 161
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 155
+
+   63 funcDec: FUNCTION ID LPAREN ID COLON ID . paramDecList RPAREN EQ exp
+   65        | FUNCTION ID LPAREN ID COLON ID . paramDecList RPAREN COLON ID EQ valExp
+
+    COMMA  shift, and go to state 162
+
+    $default  reduce using rule 66 (paramDecList)
+
+    paramDecList  go to state 163
+
+
+State 156
+
+   64 funcDec: FUNCTION ID LPAREN RPAREN COLON ID . EQ valExp
+
+    EQ  shift, and go to state 164
+
+
+State 157
+
+   62 funcDec: FUNCTION ID LPAREN RPAREN EQ exp .
+
+    $default  reduce using rule 62 (funcDec)
+
+
+State 158
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   61 varDec: VAR ID COLON ID ASSIGN valExp .
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+    $default  reduce using rule 61 (varDec)
+
+
+State 159
+
+   56 ty: LBRACE ID COLON . ID fieldDecList RBRACE
+
+    ID  shift, and go to state 165
+
+
+State 160
+
+   57 ty: ARRAY OF ID .
+
+    $default  reduce using rule 57 (ty)
+
+
+State 161
+
+   79 forStm: FOR ID ASSIGN valExp TO valExp DO exp .
+
+    $default  reduce using rule 79 (forStm)
+
+
+State 162
+
+   67 paramDecList: COMMA . ID COLON ID paramList
+
+    ID  shift, and go to state 166
+
+
+State 163
+
+   63 funcDec: FUNCTION ID LPAREN ID COLON ID paramDecList . RPAREN EQ exp
+   65        | FUNCTION ID LPAREN ID COLON ID paramDecList . RPAREN COLON ID EQ valExp
+
+    RPAREN  shift, and go to state 167
+
+
+State 164
+
+   64 funcDec: FUNCTION ID LPAREN RPAREN COLON ID EQ . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 168
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 165
+
+   56 ty: LBRACE ID COLON ID . fieldDecList RBRACE
+
+    COMMA  shift, and go to state 169
+
+    $default  reduce using rule 58 (fieldDecList)
+
+    fieldDecList  go to state 170
+
+
+State 166
+
+   67 paramDecList: COMMA ID . COLON ID paramList
+
+    COLON  shift, and go to state 171
+
+
+State 167
+
+   63 funcDec: FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN . EQ exp
+   65        | FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN . COLON ID EQ valExp
+
+    COLON  shift, and go to state 172
+    EQ     shift, and go to state 173
+
+
+State 168
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   64 funcDec: FUNCTION ID LPAREN RPAREN COLON ID EQ valExp .
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+    $default  reduce using rule 64 (funcDec)
+
+
+State 169
+
+   59 fieldDecList: COMMA . ID COLON ID fieldDecList
+
+    ID  shift, and go to state 174
+
+
+State 170
+
+   56 ty: LBRACE ID COLON ID fieldDecList . RBRACE
+
+    RBRACE  shift, and go to state 175
+
+
+State 171
+
+   67 paramDecList: COMMA ID COLON . ID paramList
+
+    ID  shift, and go to state 176
+
+
+State 172
+
+   65 funcDec: FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN COLON . ID EQ valExp
+
+    ID  shift, and go to state 177
+
+
+State 173
+
+   63 funcDec: FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN EQ . exp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 4
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 6
+    WHILE   shift, and go to state 7
+    FOR     shift, and go to state 8
+    LET     shift, and go to state 9
+    BREAK   shift, and go to state 10
+    NIL     shift, and go to state 11
+
+    exp            go to state 178
+    valExp         go to state 14
+    lvaule         go to state 15
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+    stm            go to state 23
+    assignStm      go to state 24
+    ifThenStm      go to state 25
+    whileStm       go to state 26
+    forStm         go to state 27
+
+
+State 174
+
+   59 fieldDecList: COMMA ID . COLON ID fieldDecList
+
+    COLON  shift, and go to state 179
+
+
+State 175
+
+   56 ty: LBRACE ID COLON ID fieldDecList RBRACE .
+
+    $default  reduce using rule 56 (ty)
+
+
+State 176
+
+   67 paramDecList: COMMA ID COLON ID . paramList
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 66
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    paramList      go to state 180
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 177
+
+   65 funcDec: FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN COLON ID . EQ valExp
+
+    EQ  shift, and go to state 181
+
+
+State 178
+
+   63 funcDec: FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN EQ exp .
+
+    $default  reduce using rule 63 (funcDec)
+
+
+State 179
+
+   59 fieldDecList: COMMA ID COLON . ID fieldDecList
+
+    ID  shift, and go to state 182
+
+
+State 180
+
+   67 paramDecList: COMMA ID COLON ID paramList .
+
+    $default  reduce using rule 67 (paramDecList)
+
+
+State 181
+
+   65 funcDec: FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN COLON ID EQ . valExp
+
+    ID      shift, and go to state 1
+    STRING  shift, and go to state 2
+    INT     shift, and go to state 3
+    LPAREN  shift, and go to state 33
+    MINUS   shift, and go to state 5
+    IF      shift, and go to state 34
+    LET     shift, and go to state 9
+    NIL     shift, and go to state 11
+
+    valExp         go to state 183
+    lvaule         go to state 36
+    constant       go to state 16
+    callExp        go to state 17
+    opExp          go to state 18
+    recordExp      go to state 19
+    arrayExp       go to state 20
+    letExp         go to state 21
+    ifThenElseExp  go to state 22
+
+
+State 182
+
+   59 fieldDecList: COMMA ID COLON ID . fieldDecList
+
+    COMMA  shift, and go to state 169
+
+    $default  reduce using rule 58 (fieldDecList)
+
+    fieldDecList  go to state 184
+
+
+State 183
+
+   27 opExp: valExp . AND valExp
+   28      | valExp . OR valExp
+   29      | valExp . GT valExp
+   30      | valExp . GE valExp
+   31      | valExp . LT valExp
+   32      | valExp . LE valExp
+   33      | valExp . EQ valExp
+   34      | valExp . NEQ valExp
+   35      | valExp . PLUS valExp
+   36      | valExp . MINUS valExp
+   37      | valExp . TIMES valExp
+   38      | valExp . DIVIDE valExp
+   65 funcDec: FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN COLON ID EQ valExp .
+
+    PLUS    shift, and go to state 50
+    MINUS   shift, and go to state 51
+    TIMES   shift, and go to state 52
+    DIVIDE  shift, and go to state 53
+    EQ      shift, and go to state 54
+    NEQ     shift, and go to state 55
+    LT      shift, and go to state 56
+    LE      shift, and go to state 57
+    GT      shift, and go to state 58
+    GE      shift, and go to state 59
+    AND     shift, and go to state 60
+    OR      shift, and go to state 61
+
+    $default  reduce using rule 65 (funcDec)
+
+
+State 184
+
+   59 fieldDecList: COMMA ID COLON ID fieldDecList .
+
+    $default  reduce using rule 59 (fieldDecList)

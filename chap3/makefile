@@ -26,4 +26,4 @@ util.o: util.c util.h
 	cc -g -c util.c
 
 clean: 
-	rm -f util.o parsetest.o lex.yy.o errormsg.o y.tab.c y.tab.h y.tab.o
+	rm -f util.o parsetest.o lex.yy.o errormsg.o y.tab.c y.tab.h y.tab.o lex.yy.c y.tab.c y.tab.h
