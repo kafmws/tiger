@@ -34,7 +34,7 @@ void yyerror(char *s)
 
 %start program
 
-%left lowPrec
+%right OF
 %left ASSIGN
 %left OR
 %left AND
@@ -51,8 +51,8 @@ void yyerror(char *s)
 program     : exp
             ;
 
-exp         : valExp              %prec lowPrec
-            | stm                 %prec lowPrec
+exp         : valExp
+            | stm
             | LPAREN RPAREN
             ;
 
@@ -91,7 +91,7 @@ paramList   : valExp
 expSeq      : /*empty*/
             | SEMICOLON exp expSeq
 
-opExp       : MINUS valExp        
+opExp       : MINUS valExp         %prec UMINUS
             | valExp AND    valExp
             | valExp OR     valExp
             | valExp GT     valExp
@@ -114,7 +114,7 @@ fieldList   : ID ASSIGN valExp
             | ID ASSIGN valExp COMMA fieldList
             ;
 
-arrayExp    : /*typeid*/ ID LBRACK valExp RBRACK OF valExp    %prec lowPrec
+arrayExp    : /*typeid*/ ID LBRACK valExp RBRACK OF valExp
             ;
 
 letExp      : LET IN END
