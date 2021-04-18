@@ -110,8 +110,8 @@ recordExp   : /*typeid*/ ID LBRACE RBRACE
             | /*typeid*/ ID LBRACE fieldList RBRACE
             ;
 
-fieldList   : ID ASSIGN valExp
-            | ID ASSIGN valExp COMMA fieldList
+fieldList   : ID EQ valExp
+            | ID EQ valExp COMMA fieldList
             ;
 
 arrayExp    : /*typeid*/ ID LBRACK valExp RBRACK OF valExp
@@ -132,7 +132,7 @@ dec         : typeDec
             | funcDec
             ;
 
-typeDec     : TYPE /*typeid*/ ID ASSIGN ty
+typeDec     : TYPE /*typeid*/ ID EQ ty
             ;
 
 ty          : /*typeid*/ ID
@@ -156,7 +156,7 @@ funcDec     : FUNCTION ID LPAREN RPAREN EQ exp
             ;
 
 paramDecList: /*empty*/
-            | COMMA ID COLON /*typeid*/ ID paramList
+            | COMMA ID COLON /*typeid*/ ID paramDecList
             ;
 
 expList     : /*empty*/

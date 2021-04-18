@@ -55,8 +55,8 @@ Grammar
    39 recordExp: ID LBRACE RBRACE
    40          | ID LBRACE fieldList RBRACE
 
-   41 fieldList: ID ASSIGN valExp
-   42          | ID ASSIGN valExp COMMA fieldList
+   41 fieldList: ID EQ valExp
+   42          | ID EQ valExp COMMA fieldList
 
    43 arrayExp: ID LBRACK valExp RBRACK OF valExp
 
@@ -72,7 +72,7 @@ Grammar
    51    | varDec
    52    | funcDec
 
-   53 typeDec: TYPE ID ASSIGN ty
+   53 typeDec: TYPE ID EQ ty
 
    54 ty: ID
    55   | LBRACE RBRACE
@@ -91,7 +91,7 @@ Grammar
    65        | FUNCTION ID LPAREN ID COLON ID paramDecList RPAREN COLON ID EQ valExp
 
    66 paramDecList: %empty
-   67             | COMMA ID COLON ID paramList
+   67             | COMMA ID COLON ID paramDecList
 
    68 expList: %empty
    69        | SEMICOLON exp expList
@@ -134,7 +134,7 @@ Terminals, with rules where they appear
     MINUS (272) 26 36
     TIMES (273) 37
     DIVIDE (274) 38
-    EQ (275) 33 62 63 64 65
+    EQ (275) 33 41 42 53 62 63 64 65
     NEQ (276) 34
     LT (277) 31
     LE (278) 32
@@ -142,7 +142,7 @@ Terminals, with rules where they appear
     GE (280) 30
     AND (281) 27
     OR (282) 28
-    ASSIGN (283) 41 42 53 60 61 76 79
+    ASSIGN (283) 60 61 76 79
     ARRAY (284) 57
     IF (285) 70 77
     THEN (286) 70 77
@@ -188,7 +188,7 @@ Nonterminals, with rules where they appear
         on right: 7
     paramList (55)
         on left: 22 23
-        on right: 21 23 67
+        on right: 21 23
     expSeq (56)
         on left: 24 25
         on right: 8 25
@@ -230,7 +230,7 @@ Nonterminals, with rules where they appear
         on right: 52
     paramDecList (69)
         on left: 66 67
-        on right: 63 65
+        on right: 63 65 67
     expList (70)
         on left: 68 69
         on right: 45 47 69
@@ -900,7 +900,7 @@ State 42
 
 State 43
 
-   53 typeDec: TYPE . ID ASSIGN ty
+   53 typeDec: TYPE . ID EQ ty
 
     ID  shift, and go to state 81
 
@@ -1383,10 +1383,10 @@ State 68
 
 State 69
 
-   41 fieldList: ID . ASSIGN valExp
-   42          | ID . ASSIGN valExp COMMA fieldList
+   41 fieldList: ID . EQ valExp
+   42          | ID . EQ valExp COMMA fieldList
 
-    ASSIGN  shift, and go to state 102
+    EQ  shift, and go to state 102
 
 
 State 70
@@ -1588,9 +1588,9 @@ State 80
 
 State 81
 
-   53 typeDec: TYPE ID . ASSIGN ty
+   53 typeDec: TYPE ID . EQ ty
 
-    ASSIGN  shift, and go to state 114
+    EQ  shift, and go to state 114
 
 
 State 82
@@ -2075,8 +2075,8 @@ State 101
 
 State 102
 
-   41 fieldList: ID ASSIGN . valExp
-   42          | ID ASSIGN . valExp COMMA fieldList
+   41 fieldList: ID EQ . valExp
+   42          | ID EQ . valExp COMMA fieldList
 
     ID      shift, and go to state 1
     STRING  shift, and go to state 2
@@ -2296,7 +2296,7 @@ State 113
 
 State 114
 
-   53 typeDec: TYPE ID ASSIGN . ty
+   53 typeDec: TYPE ID EQ . ty
 
     ID      shift, and go to state 132
     LBRACE  shift, and go to state 133
@@ -2375,8 +2375,8 @@ State 120
    36      | valExp . MINUS valExp
    37      | valExp . TIMES valExp
    38      | valExp . DIVIDE valExp
-   41 fieldList: ID ASSIGN valExp .
-   42          | ID ASSIGN valExp . COMMA fieldList
+   41 fieldList: ID EQ valExp .
+   42          | ID EQ valExp . COMMA fieldList
 
     COMMA   shift, and go to state 138
     PLUS    shift, and go to state 50
@@ -2613,7 +2613,7 @@ State 134
 
 State 135
 
-   53 typeDec: TYPE ID ASSIGN ty .
+   53 typeDec: TYPE ID EQ ty .
 
     $default  reduce using rule 53 (typeDec)
 
@@ -2659,7 +2659,7 @@ State 137
 
 State 138
 
-   42 fieldList: ID ASSIGN valExp COMMA . fieldList
+   42 fieldList: ID EQ valExp COMMA . fieldList
 
     ID  shift, and go to state 69
 
@@ -2843,7 +2843,7 @@ State 151
 
 State 152
 
-   42 fieldList: ID ASSIGN valExp COMMA fieldList .
+   42 fieldList: ID EQ valExp COMMA fieldList .
 
     $default  reduce using rule 42 (fieldList)
 
@@ -2969,7 +2969,7 @@ State 161
 
 State 162
 
-   67 paramDecList: COMMA . ID COLON ID paramList
+   67 paramDecList: COMMA . ID COLON ID paramDecList
 
     ID  shift, and go to state 166
 
@@ -3019,7 +3019,7 @@ State 165
 
 State 166
 
-   67 paramDecList: COMMA ID . COLON ID paramList
+   67 paramDecList: COMMA ID . COLON ID paramDecList
 
     COLON  shift, and go to state 171
 
@@ -3081,7 +3081,7 @@ State 170
 
 State 171
 
-   67 paramDecList: COMMA ID COLON . ID paramList
+   67 paramDecList: COMMA ID COLON . ID paramDecList
 
     ID  shift, and go to state 176
 
@@ -3142,27 +3142,13 @@ State 175
 
 State 176
 
-   67 paramDecList: COMMA ID COLON ID . paramList
+   67 paramDecList: COMMA ID COLON ID . paramDecList
 
-    ID      shift, and go to state 1
-    STRING  shift, and go to state 2
-    INT     shift, and go to state 3
-    LPAREN  shift, and go to state 33
-    MINUS   shift, and go to state 5
-    IF      shift, and go to state 34
-    LET     shift, and go to state 9
-    NIL     shift, and go to state 11
+    COMMA  shift, and go to state 162
 
-    valExp         go to state 66
-    lvaule         go to state 36
-    constant       go to state 16
-    callExp        go to state 17
-    paramList      go to state 180
-    opExp          go to state 18
-    recordExp      go to state 19
-    arrayExp       go to state 20
-    letExp         go to state 21
-    ifThenElseExp  go to state 22
+    $default  reduce using rule 66 (paramDecList)
+
+    paramDecList  go to state 180
 
 
 State 177
@@ -3188,7 +3174,7 @@ State 179
 
 State 180
 
-   67 paramDecList: COMMA ID COLON ID paramList .
+   67 paramDecList: COMMA ID COLON ID paramDecList .
 
     $default  reduce using rule 67 (paramDecList)
 
