@@ -1,3 +1,9 @@
+#pragma once
+#ifndef _SYMBOL_H
+#define _SYMBOL_H
+
+#include "util.h"
+
 /*
  * symbol.h - Symbols and symbol-tables
  *
@@ -35,3 +41,4 @@ void S_beginScope(S_table t);
    and end the current scope. */
 void S_endScope(S_table t);
 
+#endif
