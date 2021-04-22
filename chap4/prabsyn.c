@@ -31,7 +31,7 @@ static void indent(FILE *out, int d) {
 
 /* Print A_var types. Indent d spaces. */
 static void pr_var(FILE *out, A_var v, int d) {
-  if(!v) return;
+  
   indent(out, d);
   switch (v->kind) {
   case A_simpleVar:
@@ -62,7 +62,7 @@ static void pr_oper(FILE *out, A_oper d) {
 
 /* Print A_var types. Indent d spaces. */
 void pr_exp(FILE *out, A_exp v, int d) {
-  if(!v) return;
+  
 
   indent(out, d);
   switch (v->kind) {
@@ -164,7 +164,7 @@ void pr_exp(FILE *out, A_exp v, int d) {
 }
 
 static void pr_dec(FILE *out, A_dec v, int d) {
-  if(!v) return;
+  
 
   indent(out, d);
   switch (v->kind) {
@@ -195,7 +195,7 @@ static void pr_dec(FILE *out, A_dec v, int d) {
 }
 
 static void pr_ty(FILE *out, A_ty v, int d) {
-  if(!v) return;
+  
 
   indent(out, d);
   switch (v->kind) {
@@ -216,7 +216,7 @@ static void pr_ty(FILE *out, A_ty v, int d) {
 }
 
 static void pr_field(FILE *out, A_field v, int d) {
-  if(!v) return;
+  
 
   indent(out, d);
   fprintf(out, "field(%s,\n", S_name(v->name));
@@ -256,7 +256,7 @@ static void pr_expList(FILE *out, A_expList v, int d) {
 }
 
 static void pr_fundec(FILE *out, A_fundec v, int d) {
-  if(!v) return;
+  
 
   indent(out, d);
   fprintf(out, "fundec(%s,\n", S_name(v->name));
@@ -299,7 +299,7 @@ static void pr_decList(FILE *out, A_decList v, int d) {
 }
 
 static void pr_namety(FILE *out, A_namety v, int d) {
-  if(!v) return;
+  
 
   indent(out, d);
   fprintf(out, "namety(%s,\n", S_name(v->name));

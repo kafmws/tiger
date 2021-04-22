@@ -14,12 +14,18 @@ int main(int argc, char *argv[]) {
     printf("usage: a.out filename\n");
     exit(0);
   }
+
+  int indent = 0;
   for (int i = 1; i < argc; i++) {
     A_exp program = parse(argv[i]);
     argv[i][strlen(argv[i]) - 4] = 0;
-    FILE *fp = fopen(argv[i], "w");
+    FILE *fp;
+    fp = fopen(argv[i], "w");
     if (program) {
-      pr_exp(fp, program, 2);
+      pr_exp(fp, program, indent);
+      fprintf(fp, "\n");
+      pr_exp(stdout, program, indent);
+      puts("");
       fclose(fp);
     }
     else return -1;
