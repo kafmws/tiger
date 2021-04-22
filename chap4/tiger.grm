@@ -86,6 +86,9 @@ void yyerror(char *s)
 %right      IFTHEN
 %right      ELSE
 
+%right reduce
+%right shift
+
 %%
 
 /*
