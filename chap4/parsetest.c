@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
   }
   for (int i = 1; i < argc; i++) {
     A_exp program = parse(argv[i]);
-    argv[i][strlen(argv[i]) - 2] = 0;
+    argv[i][strlen(argv[i]) - 4] = 0;
     FILE *fp = fopen(argv[i], "w");
     if (program) {
       pr_exp(fp, program, 2);

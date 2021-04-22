@@ -25,13 +25,13 @@ void yyerror(char *s)
 	A_var         var;
 	A_exp         exp;
 	/* et cetera */
-  A_ty          tyy;
+  A_ty          ty;
   A_dec         dec;
   A_decList     decList;
   A_expList     expList;
   A_field       field;
   A_fieldList   fieldList;
-  A_fundec      funcDec;
+  A_fundec      funcdec;
   A_fundecList  fundecList;
   A_namety      nameTy;
   A_nametyList  nameTyList;
@@ -58,29 +58,29 @@ void yyerror(char *s)
 %type <exp> stm assignStm ifThenStm whileStm forStm
 %type <expList> expSeq/*(exp;exp{;exp})*/ paramList/*exp{, exp}*/ expList/*exp{;exp}*/
 
-%type <tyy>         ty
-%type <funcDec>     funcDec
-%type <fundecList>  funcDecs
-%type <nameTy>      typeDec
-%type <nameTyList>  typeDecs
-%type <dec>         varDec
-%type <decList>     varDecs dec decs
+%type <funcdec>     fundec
+%type <fundecList>  fundecList
+%type <ty>          ty
+%type <nameTy>      namety
+%type <nameTyList>  nametyList
+%type <dec>         dec varDec
+%type <decList>     decs
 
 %type <fieldList>   paramDecList/*in funcDec*/ fieldDecList/*in typeDec*/
 %type <efieldList>  fieldList/*in recordExp*/
 
 %start program
 
-%right OF
-%left ASSIGN
-%left OR
-%left AND
-%nonassoc EQ NEQ LT LE GT GE
-%left PLUS MINUS
-%left TIMES DIVIDE
-%left UMINUS
+%right      OF
+%left       ASSIGN
+%left       OR
+%left       AND
+%nonassoc   EQ NEQ LT LE GT GE
+%left       PLUS MINUS
+%left       TIMES DIVIDE
+%left       UMINUS
 
-%right ELSE
+%right      ELSE
 
 %%
 
@@ -95,14 +95,14 @@ program     : exp                                             {absyn_root=$1;}
 
 exp         : valExp                                          {$$=$1;}
             | stm                                             {$$=$1;}
-            | LPAREN RPAREN                                   {$$=A_NilExp(@2);}
+            | LPAREN RPAREN                                   {$$=A_NilExp(EM_tokPos);}
             ;
 
 /*some exp may no value*/
-valExp      : lvaule                                          {$$=A_VarExp(@1, $1);}
+valExp      : lvaule                                          {$$=A_VarExp(EM_tokPos, $1);}
             | constant                                        {$$=$1;}
             | callExp                                         {$$=$1;}
-            | LPAREN exp SEMICOLON exp expSeq RPAREN          {$$=A_SeqExp(@1,
+            | LPAREN exp SEMICOLON exp expSeq RPAREN          {$$=A_SeqExp(EM_tokPos,
                                                                     A_ExpList($2,
                                                                       A_ExpList($4, $5
                                                                         )));}
@@ -113,18 +113,18 @@ valExp      : lvaule                                          {$$=A_VarExp(@1, $
             | ifThenElseExp                                   {$$=$1;}
             ;
 
-lvaule      : ID                                              {$$=A_SimpleVar(@1, $1);}
-            | lvaule DOT ID                                   {$$=A_FieldVar(@2, $1, $3);}
-            | lvaule LBRACK valExp RBRACK                     {$$=A_SubscriptVar(@2, $1, $3);}
+lvaule      : ID                                              {$$=A_SimpleVar(EM_tokPos, S_Symbol($1));}
+            | lvaule DOT ID                                   {$$=A_FieldVar(EM_tokPos, $1, S_Symbol($3));}
+            | lvaule LBRACK valExp RBRACK                     {$$=A_SubscriptVar(EM_tokPos, $1, $3);}
             ;
 
-constant    : NIL                                             {$$=A_NilExp(@1);}
-            | INT                                             {$$=A_IntExp(@1);}
-            | STRING                                          {$$=A_StringExp(@1);}
+constant    : NIL                                             {$$=A_NilExp(EM_tokPos);}
+            | INT                                             {$$=A_IntExp(EM_tokPos, $1);}
+            | STRING                                          {$$=A_StringExp(EM_tokPos, $1);}
             ;
 
-callExp     : ID LPAREN RPAREN                                {$$=A_CallExp(@1, $1, NULL);}
-            | ID LPAREN paramList RPAREN                      {$$=A_CallExp(@1, $1, $3);}
+callExp     : ID LPAREN RPAREN                                {$$=A_CallExp(EM_tokPos, S_Symbol($1), NULL);}
+            | ID LPAREN paramList RPAREN                      {$$=A_CallExp(EM_tokPos, S_Symbol($1), $3);}
             ;
 
 /* valExp{, valExp} (at least 1 valExp) */
@@ -134,123 +134,119 @@ paramList   : valExp                                          {$$=A_ExpList($1, 
 /*() included in parentheses*/
 /*(exp;exp{;exp}) (more than 2 exp)*/
 expSeq      : /*empty*/                                       {$$=NULL;}
-            | SEMICOLON exp expSeq                            {$$=A_SeqExp($2, $3);}
+            | SEMICOLON exp expSeq                            {$$=A_ExpList($2, $3);}
 
-opExp       : MINUS valExp         %prec UMINUS               {$$=A_OpExp(@1, A_minusOp, 0, $2);}
-            | valExp AND    valExp                            {$$=A_IfExp(@1, $1, $3, 0);}
-            | valExp OR     valExp                            {$$=A_IfExp(@1, $1, 1, $3);}
-            | valExp GT     valExp                            {$$=A_OpExp(@1, $1, A_gtOp, $3);}
-            | valExp GE     valExp                            {$$=A_OpExp(@1, $1, A_geOp, $3);}
-            | valExp LT     valExp                            {$$=A_OpExp(@1, $1, A_ltOp, $3);}
-            | valExp LE     valExp                            {$$=A_OpExp(@1, $1, A_leOp, $3);}
-            | valExp EQ     valExp                            {$$=A_OpExp(@1, $1, A_eqOp, $3);}
-            | valExp NEQ    valExp                            {$$=A_OpExp(@1, $1, A_neqOp, $3);}
-            | valExp PLUS   valExp                            {$$=A_OpExp(@1, $1, A_plusOp, $3);}
-            | valExp MINUS  valExp                            {$$=A_OpExp(@1, $1, A_minusOp, $3);}
-            | valExp TIMES  valExp                            {$$=A_OpExp(@1, $1, A_timesOp, $3);}
-            | valExp DIVIDE valExp                            {$$=A_OpExp(@1, $1, A_divideOp, $3);}
+opExp       : MINUS valExp         %prec UMINUS               {$$=A_OpExp(EM_tokPos, A_minusOp, 0, $2);}
+            | valExp AND    valExp                            {$$=A_IfExp(EM_tokPos, $1, $3, A_IntExp(0, 0));}
+            | valExp OR     valExp                            {$$=A_IfExp(EM_tokPos, $1, A_IntExp(0, 1), $3);}
+            | valExp GT     valExp                            {$$=A_OpExp(EM_tokPos, A_gtOp, $1, $3);}
+            | valExp GE     valExp                            {$$=A_OpExp(EM_tokPos, A_geOp, $1, $3);}
+            | valExp LT     valExp                            {$$=A_OpExp(EM_tokPos, A_ltOp, $1, $3);}
+            | valExp LE     valExp                            {$$=A_OpExp(EM_tokPos, A_leOp, $1, $3);}
+            | valExp EQ     valExp                            {$$=A_OpExp(EM_tokPos, A_eqOp, $1, $3);}
+            | valExp NEQ    valExp                            {$$=A_OpExp(EM_tokPos, A_neqOp, $1,  $3);}
+            | valExp PLUS   valExp                            {$$=A_OpExp(EM_tokPos, A_plusOp, $1, $3);}
+            | valExp MINUS  valExp                            {$$=A_OpExp(EM_tokPos, A_minusOp, $1, $3);}
+            | valExp TIMES  valExp                            {$$=A_OpExp(EM_tokPos, A_timesOp, $1, $3);}
+            | valExp DIVIDE valExp                            {$$=A_OpExp(EM_tokPos, A_divideOp, $1, $3);}
             ;
 
-recordExp   : /*typeid*/ ID LBRACE RBRACE                     {$$=A_RecordExp(@1, $1, NULL);}
-            | /*typeid*/ ID LBRACE fieldList RBRACE           {$$=A_RecordExp(@1, $1, $3);}
+recordExp   : /*typeid*/ ID LBRACE RBRACE                     {$$=A_RecordExp(EM_tokPos, S_Symbol($1), NULL);}
+            | /*typeid*/ ID LBRACE fieldList RBRACE           {$$=A_RecordExp(EM_tokPos, S_Symbol($1), $3);}
             ;
 
-fieldList   : ID EQ valExp                                    {$$=A_EfieldList(A_Efield($1, $3), NULL);}
-            | ID EQ valExp COMMA fieldList                    {$$=A_EfieldList(A_Efield($1, $3), $5);}
+fieldList   : ID EQ valExp                                    {$$=A_EfieldList(A_Efield(S_Symbol($1), $3), NULL);}
+            | ID EQ valExp COMMA fieldList                    {$$=A_EfieldList(A_Efield(S_Symbol($1), $3), $5);}
             ;
 
-arrayExp    : /*typeid*/ ID LBRACK valExp RBRACK OF valExp    {$$=A_ArrayExp(@1, $1, $3, $6);}
+arrayExp    : /*typeid*/ ID LBRACK valExp RBRACK OF valExp    {$$=A_ArrayExp(EM_tokPos, S_Symbol($1), $3, $6);}
             ;
 
-letExp      : LET IN END                                      {$$=A_LetExp(@1, NULL, NULL);}
-            | LET IN exp expList END                          {$$=A_LetExp(@1, NULL, A_ExpList($3, $4));}
-            | LET decs IN END                                 {$$=A_LetExp(@1, $2, NULL);}
-            | LET decs IN exp expList END                     {$$=A_LetExp(@1, $2, A_ExpList($4, $5));}
+letExp      : LET IN END                                      {$$=A_LetExp(EM_tokPos, NULL, NULL);}
+            | LET IN exp expList END                          {$$=A_LetExp(EM_tokPos, NULL, A_SeqExp(EM_tokPos, A_ExpList($3, $4)));}
+            | LET decs IN END                                 {$$=A_LetExp(EM_tokPos, $2, NULL);}
+            | LET decs IN exp expList END                     {$$=A_LetExp(EM_tokPos, $2, A_SeqExp(EM_tokPos, A_ExpList($4, $5)));}
             ;
 
 decs        : dec                                             {$$=A_DecList($1, NULL);}
             | dec decs                                        {$$=A_DecList($1, $2);}
             ;
 
-dec         : varDecs                                         {$$=$1;}
-            | typeDecs                                        {$$=A_DecList(A_TypeDec(@1, $1), NULL);}
-            | funcDecs                                        {$$=A_DecList(A_FunctionDec(@1, $1), NULL);}
+dec         : varDec                                          {$$=$1;}
+            | nametyList                                      {$$=A_TypeDec(EM_tokPos, $1);}
+            | fundecList                                      {$$=A_FunctionDec(EM_tokPos, $1);}
             ;
 
-typeDecs    : /*empty*/                                       {$$=NULL;}
-            | typeDec typeDecs                                {$$=A_NametyList($1, $2);}
+nametyList  : namety                                          {$$=A_NametyList($1, NULL);}
+            | namety nametyList                               {$$=A_NametyList($1, $2);}
             ;
 
-typeDec     : TYPE /*typeid*/ ID EQ ty                        {$$=A_Namety($2, $4);}
+namety      : TYPE /*typeid*/ ID EQ ty                        {$$=A_Namety(S_Symbol($2), $4);}
             ;
 
-ty          : /*typeid*/ ID                                   {$$=A_NameTy(@1, $1);}
-            | LBRACE RBRACE                                   {$$=A_RecordTy(@1, NULL);}
-            | LBRACE ID COLON /*typeid*/ ID fieldDecList RBRACE   {$$=A_RecordTy(@1,
-                                                                        A_FieldList(A_Field(@2, $2, $4), 
+ty          : /*typeid*/ ID                                   {$$=A_NameTy(EM_tokPos, S_Symbol($1));}
+            | LBRACE RBRACE                                   {$$=A_RecordTy(EM_tokPos, NULL);}
+            | LBRACE ID COLON /*typeid*/ ID fieldDecList RBRACE   {$$=A_RecordTy(EM_tokPos,
+                                                                        A_FieldList(A_Field(EM_tokPos, S_Symbol($2), S_Symbol($4)), 
                                                                         $5));}
-            | ARRAY OF /*typeid*/ ID                          {$$=A_ArrayTy(@1, $3);}
+            | ARRAY OF /*typeid*/ ID                          {$$=A_ArrayTy(EM_tokPos, S_Symbol($3));}
             ;
 
 fieldDecList: /*empty*/                                       {$$=NULL;}
-            | COMMA ID COLON /*typeid*/ ID fieldDecList       {$$=A_FieldList(A_Field(@2, $2, $4), $5);}
+            | COMMA ID COLON /*typeid*/ ID fieldDecList       {$$=A_FieldList(A_Field(EM_tokPos, S_Symbol($2), S_Symbol($4)), $5);}
             ;
 
-varDecs     : varDec                                          {$$=A_DecList($1, NULL);}
-            | varDec varDecs                                  {$$=A_DecList($1, $2);}
+varDec      : VAR ID ASSIGN valExp                            {$$=A_VarDec(EM_tokPos, S_Symbol($2), NULL, $4);}
+            | VAR ID COLON /*typeid*/ ID ASSIGN valExp        {$$=A_VarDec(EM_tokPos, S_Symbol($2), S_Symbol($4), $6);}
             ;
 
-varDec      : VAR ID ASSIGN valExp                            {$$=VarDec(@1, $2, NULL, $4);}
-            | VAR ID COLON /*typeid*/ ID ASSIGN valExp        {$$=VarDec(@1, $2, $4, $6);}
+fundecList  : fundec                                          {$$=A_FundecList($1, NULL);}
+            | fundec fundecList                               {$$=A_FundecList($1, $2);}
             ;
 
-funcDecs    : funcDec                                         {$$=A_FundecList($1, NULL);}
-            | funcDec funcDecs                                {$$=A_FundecList($1, $2);}
-            ;
-
-funcDec     : FUNCTION ID LPAREN RPAREN EQ exp                {$$=A_Fundec(@1, $2, NULL, NULL, $6);}
+fundec      : FUNCTION ID LPAREN RPAREN EQ exp                {$$=A_Fundec(EM_tokPos, S_Symbol($2), NULL, NULL, $6);}
             | FUNCTION ID LPAREN ID COLON /*typeid*/ ID paramDecList RPAREN EQ exp                          {
-                                                               A_fieldList paramList = A_fieldList(A_field(@4, $4, $6), $7);
-                                                               $$=A_Fundec(@1, $2, paramList, NULL, $10);
+                                                               A_fieldList paramList = A_FieldList(A_Field(EM_tokPos, S_Symbol($4), S_Symbol($6)), $7);
+                                                               $$=A_Fundec(EM_tokPos, S_Symbol($2), paramList, NULL, $10);
                                                                                                             }
             | FUNCTION ID LPAREN RPAREN COLON /*typeid*/ ID EQ valExp                                       {
-                                                               $$=A_Fundec(@1, $2, NULL, $6, $8);
+                                                               $$=A_Fundec(EM_tokPos, S_Symbol($2), NULL, S_Symbol($6), $8);
                                                                                                             }
             | FUNCTION ID LPAREN ID COLON /*typeid*/ ID paramDecList RPAREN COLON /*typeid*/ ID EQ valExp   {
-                                                               A_fieldList paramList = A_fieldList(A_field(@4, $4, $6), $7);
-                                                               $$=A_Fundec(@1, $2, paramList, $10, $12);
+                                                               A_fieldList paramList = A_FieldList(A_Field(EM_tokPos, S_Symbol($4), S_Symbol($6)), $7);
+                                                               $$=A_Fundec(EM_tokPos, S_Symbol($2), paramList, S_Symbol($10), $12);
                                                                                                             }
             ;
 
 paramDecList: /*empty*/                                       {$$=NULL;}
-            | COMMA ID COLON /*typeid*/ ID paramDecList       {$$=A_fieldList(A_field(@2, $2, $4), $5);}
+            | COMMA ID COLON /*typeid*/ ID paramDecList       {$$=A_FieldList(A_Field(EM_tokPos, S_Symbol($2), S_Symbol($4)), $5);}
             ;
 
 expList     : /*empty*/                                       {$$=NULL;}
             | SEMICOLON exp expList                           {$$=A_ExpList($2, $3);}
             ;
 
-ifThenElseExp:IF valExp THEN valExp ELSE valExp %prec ELSE    {$$=A_IfExp(@1, $2, $4, $6);}
+ifThenElseExp:IF valExp THEN valExp ELSE valExp %prec ELSE    {$$=A_IfExp(EM_tokPos, $2, $4, $6);}
             ;
 
 /*Absolutely no value*/
 stm         : assignStm                                       {$$=$1;}
             | ifThenStm                                       {$$=$1;}
             | whileStm                                        {$$=$1;}
-            | BREAK                                           {$$=A_BreakExp(@1)}
+            | BREAK                                           {$$=A_BreakExp(EM_tokPos);}
             | forStm                                          {$$=$1;}
             ;
 
-assignStm   : lvaule ASSIGN valExp                            {$$=A_AssignExp(@2, $1, $3);}
+assignStm   : lvaule ASSIGN valExp                            {$$=A_AssignExp(EM_tokPos, $1, $3);}
             ;
 
-ifThenStm   : IF valExp THEN valExp                           {$$=A_IfExp(@1, $2, $4, NULL);}
+ifThenStm   : IF valExp THEN valExp                           {$$=A_IfExp(EM_tokPos, $2, $4, NULL);}
             ;
 
-whileStm    : WHILE valExp DO exp /*produce no value exp*/    {$$=A_WhileExp(@1, $2, $4);}
+whileStm    : WHILE valExp DO exp /*produce no value exp*/    {$$=A_WhileExp(EM_tokPos, $2, $4);}
             ;
 
 forStm      : FOR ID ASSIGN valExp TO valExp DO exp /*produce no value exp*/  {
-                                                               $$=A_ForExp(@1, $2, $4, $6, $8);
+                                                               $$=A_ForExp(EM_tokPos, S_Symbol($2), $4, $6, $8);
                                                                }
             ;
