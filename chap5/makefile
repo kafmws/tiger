@@ -28,6 +28,9 @@ symbol.o: symbol.c util.h symbol.h table.h
 table.o: table.c util.h table.h
 	cc -g -c table.c
 
+type.o: type.c type.h
+	cc -g -c type.c
+
 errormsg.o: errormsg.c errormsg.h util.h
 	cc -g -c errormsg.c
 
