@@ -1,3 +1,6 @@
+#pragma once
+#ifndef _TYPE_H
+#define _TYPE_H
 /*
  * types.h - 
  *
@@ -26,6 +29,8 @@ Ty_ty Ty_Nil(void);
 Ty_ty Ty_Int(void);
 Ty_ty Ty_String(void);
 Ty_ty Ty_Void(void);
+Ty_ty Ty_RecordType(void);
+Ty_ty Ty_ArrayType(void);
 
 Ty_ty Ty_Record(Ty_fieldList fields);
 Ty_ty Ty_Array(Ty_ty ty);
@@ -37,3 +42,5 @@ Ty_fieldList Ty_FieldList(Ty_field head, Ty_fieldList tail);
 
 void Ty_print(Ty_ty t);
 void TyList_print(Ty_tyList list);
+
+#endif

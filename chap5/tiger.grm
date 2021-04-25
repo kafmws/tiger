@@ -104,7 +104,7 @@ program     : exp                                             {absyn_root=$1;}
 
 exp         : valExp             %prec OF                     {$$=$1;}
             | stm                                             {$$=$1;}
-            | LPAREN RPAREN                                   {$$=A_NilExp(EM_tokPos);}
+            | LPAREN RPAREN                                   {$$=NULL;}
             | LPAREN exp RPAREN                               {$$=$2;}
             ;
 
@@ -251,7 +251,7 @@ stm         : assignStm                                       {$$=$1;}
 assignStm   : lvaule ASSIGN valExp                            {$$=A_AssignExp(EM_tokPos, $1, $3);}
             ;
 
-ifThenStm   : IF valExp THEN exp          %prec IFTHEN        {$$=A_IfExp(EM_tokPos, $2, $4, A_NilExp(EM_tokPos));}
+ifThenStm   : IF valExp THEN exp          %prec IFTHEN        {$$=A_IfExp(EM_tokPos, $2, $4, NULL);}
             ;
 
 whileStm    : WHILE valExp DO exp /*produce no value exp*/    {$$=A_WhileExp(EM_tokPos, $2, $4);}
