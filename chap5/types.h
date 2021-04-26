@@ -1,6 +1,8 @@
 #pragma once
 #ifndef _TYPE_H
 #define _TYPE_H
+
+#include "symbol.h"
 /*
  * types.h - 
  *
@@ -31,6 +33,7 @@ Ty_ty Ty_String(void);
 Ty_ty Ty_Void(void);
 Ty_ty Ty_RecordType(void);
 Ty_ty Ty_ArrayType(void);
+Ty_ty Ty_TypeType(void);
 
 Ty_ty Ty_Record(Ty_fieldList fields);
 Ty_ty Ty_Array(Ty_ty ty);

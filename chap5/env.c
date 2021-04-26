@@ -1,5 +1,5 @@
 #include "env.h"
-#include "stdio.h"
+#include <stdio.h>
 
 E_enventry E_VarEntry(Ty_ty ty) {
   E_enventry e = (E_enventry) checked_malloc(sizeof(*e));
@@ -24,6 +24,7 @@ S_table E_base_tenv(void) {
     S_enter(tyEnv, S_Symbol("string"),  Ty_String());
 
     /*for better error msg*/
+    S_enter(tyEnv, S_Symbol("type name"),     Ty_TypeType());
     S_enter(tyEnv, S_Symbol("array type"),    Ty_ArrayType());
     S_enter(tyEnv, S_Symbol("record type"),   Ty_RecordType());
     S_enter(tyEnv, S_Symbol("unknown type"),  NULL);
@@ -47,9 +48,9 @@ S_table E_base_venv(void) {
     S_enter(idEnv, S_Symbol("exit"),       E_FunEntry(Ty_TyList(Ty_Int(), NULL), Ty_Void()));
 
     /*for better error msg*/
-    S_enter(idEnv, S_Symbol(" variable"),           E_enventry_Var());
     S_enter(idEnv, S_Symbol("array name"),          E_enventry_Array());
     S_enter(idEnv, S_Symbol("record name"),         E_enventry_Record());
+    S_enter(idEnv, S_Symbol("variable name"),       E_enventry_Var());
     S_enter(idEnv, S_Symbol("function name"),       E_enventry_Func());
     S_enter(idEnv, S_Symbol("unknown identifier"),  NULL);
   }

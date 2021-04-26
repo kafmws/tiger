@@ -1,17 +1,8 @@
-a.out: parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o parse.o prabsyn.o symbol.o table.o
-	cc -g parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o parse.o prabsyn.o symbol.o table.o
+a.out: parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o parse.o prabsyn.o symbol.o table.o semant.o types.o env.o
+	cc -g parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o parse.o prabsyn.o symbol.o table.o semant.o types.o env.o
 
-parsetest.o: parsetest.c absyn.h errormsg.h parse.h symbol.h util.h prabsyn.h
-	cc -g -c parsetest.c 
-
-y.tab.o: y.tab.c absyn.h
-	cc -g -c y.tab.c
-
-y.tab.c: tiger.grm
-	yacc -dv tiger.grm
-
-y.tab.h: y.tab.c
-	echo "y.tab.h was created at the same time as y.tab.c"
+parsetest.o: parsetest.c absyn.h errormsg.h parse.h symbol.h util.h prabsyn.h semant.h
+	cc -g -c parsetest.c
 
 absyn.o: absyn.c absyn.h symbol.h util.h
 	cc -g -c absyn.c
@@ -28,17 +19,32 @@ symbol.o: symbol.c util.h symbol.h table.h
 table.o: table.c util.h table.h
 	cc -g -c table.c
 
-type.o: type.c type.h
-	cc -g -c type.c
+types.o: types.c types.h symbol.h
+	cc -g -c types.c
 
-errormsg.o: errormsg.c errormsg.h util.h
-	cc -g -c errormsg.c
+env.o: env.c env.h
+	cc -g -c env.c
+
+semant.o:semant.c semant.h absyn.h env.h errormsg.h table.h
+	cc -g -c semant.c
+
+y.tab.o: y.tab.c absyn.h
+	cc -g -c y.tab.c
+
+y.tab.c: tiger.grm
+	yacc -dv tiger.grm
+
+y.tab.h: y.tab.c
+	echo "y.tab.h was created at the same time as y.tab.c"
 
 lex.yy.o: lex.yy.c y.tab.h errormsg.h util.h
 	cc -g -c lex.yy.c
 
 lex.yy.c: tiger.lex
 	lex tiger.lex
+
+errormsg.o: errormsg.c errormsg.h util.h
+	cc -g -c errormsg.c
 
 util.o: util.c util.h
 	cc -g -c util.c

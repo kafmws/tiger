@@ -237,7 +237,7 @@ expList     : /*empty*/                                       {$$=NULL;}
             | SEMICOLON exp expList                           {$$=A_ExpList($2, $3);}
             ;
 
-ifThenElseExp:IF valExp THEN exp ELSE exp %prec ELSE    {$$=A_IfExp(EM_tokPos, $2, $4, $6);}
+ifThenElseExp:IF valExp THEN exp ELSE exp %prec ELSE          {$$=A_IfExp(EM_tokPos, $2, $4, $6);}
             ;
 
 /*Absolutely no value*/
