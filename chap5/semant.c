@@ -286,7 +286,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
 
       // loop variable declaration
       S_beginScope(venv);
-      S_enter(venv, exp->u.forr.var, lo.exp);
+      S_enter(venv, exp->u.forr.var, E_VarEntry(lo.ty));
 
       // can not assign to exp->u.forr.var
       int i = 0;
@@ -325,7 +325,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
         EM_error(exp->u.array.size->pos, "illegal array size");
       }
       struct expty init = transExp(venv, tenv, exp->u.array.init);
-      TYPE_CHECK_WITH_NIL_RECORD(exp->u.array.init->pos, init.ty, arrayTy);
+      TYPE_CHECK_WITH_NIL_RECORD(exp->u.array.init->pos, init.ty, arrayTy->u.array);
       return expTy(NULL, arrayTy);
     } break;
     default:
@@ -446,7 +446,10 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
       if (dec->u.var.typ) {
         decTy = (Ty_ty)S_look(tenv, dec->u.var.typ);
         IS_TYPE(dec->pos, decTy);
-        TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy);
+        if (decTy->kind == Ty_array){
+          TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy->u.array);
+        }
+        else  TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy);
       }
       S_enter(venv, dec->u.var.var, E_VarEntry(decTy));
     } break;
@@ -480,7 +483,7 @@ Ty_ty transTy(S_table tenv, A_ty ty) {
       Ty_fieldList tyFieldList = NULL;
 
       // convert A_fieldList to Ty_fieldList
-      if (tyFieldList) {
+      if (AfieldList) {
         Ty_fieldList tyList = tyFieldList = Ty_FieldList(NULL, NULL);
         while (AfieldList) {
           Ty_ty fieldTy = (Ty_ty)S_look(tenv, AfieldList->head->typ);
