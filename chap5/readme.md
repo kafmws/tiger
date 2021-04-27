@@ -4,6 +4,14 @@
 ### 如何检查for中的循环变量在循环体中未被赋值
 原理同上。若赋值语句处于for循环中，检查左值是否为循环变量。
 
+### 处理相互递归的声明（UNDO）
+Tiger 允许相邻的类型声明、函数声明进行递归地定义（当然递归中不能出现重名与环），
+因此在typeDecList或者funcdecList中，先遍历一遍所有的声明，将名字填充到符号表，不进行绑定。
+当处理完当前一系列声明后，检查其中每个声明是否完整。
+
+### 关于名字的重复定义
+Tiger 中类型和变量名可以相同，而同名的变量和函数将相互隐藏。
+
 ### 关于错误信息的输出
 由于所有的类型都是通过 Ty_ty 来确定的（比较指针），
 每一个名字与其实体\<name, Ty_ty\>都是唯一的，
@@ -24,5 +32,30 @@
 
 
 ### 小坑
-在 parsetest.c 中使用了 EM_anyErrors，死活找不到符号
+在 parsetest.c 中使用了 EM_anyErrors 判断是否存在错误，死活找不到符号
 最后用 nm 命令查看符号表，才发现 errormsg.c 中定义的是 anyErrors，errormsg.h 声明的是 EM_.. :)
+
+
+
+### ※
+在调试过程中遇到一个有趣的bug
+符号表的打印依赖于以下函数，可见该函数依赖于 t->top
+因此，当我使用该函数遍历表时，若我的show函数再次使用该函数遍历表 t，
+则遍历到的是不完整的表。
+
+我把这种特性称为**不可重入**。（当一轮递归未完成时，不可再开启一轮递归）
+```C
+void TAB_dump(TAB_table t, void (*show)(void *key, void *value)) {
+  void *k = t->top;
+  int index = ((unsigned)k) % TABSIZE;
+  binder b = t->table[index];
+  if (b==NULL) return;
+  t->table[index]=b->next;
+  t->top = b->prevtop;
+  show(b->key,b->value);
+  TAB_dump(t,show);
+  assert(t->top == b->prevtop && t->table[index]==b->next);
+  t->top=k;
+  t->table[index]=b;
+}
+```

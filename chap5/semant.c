@@ -1,5 +1,7 @@
 #include "semant.h"
 
+#include <stdio.h>
+
 #include "absyn.h"
 #include "env.h"
 #include "errormsg.h"
@@ -13,7 +15,7 @@ static Ty_ty actualTy(Ty_ty ty) {
 
 #define BASE_CHECK(pos, actual, expect, env)                               \
   do {                                                                     \
-    assert((expect));                                                      \
+    /*assert((expect));*/                                                  \
     if ((actual) != (expect)) {                                            \
       S_symbol required = binding2sym((env), (expect));                    \
       S_symbol found = binding2sym((env), (actual));                       \
@@ -81,7 +83,100 @@ static void get_typename(S_symbol sym, void* binding) {
 static S_symbol binding2sym(S_table t, void* binding) {
   obj_binding = binding;
   S_dump(t, get_typename);
+  if (obj_binding == binding) {
+    // assert(0);  // not found
+  }
   return (S_symbol)obj_binding;
+}
+
+/* for debug */
+static void show_name(S_symbol sym, void* binding) {
+  if (!binding) {
+    printf("%20s:%s\n", S_name(sym), "NULL");
+    return;
+  }
+  E_enventry entry = (E_enventry)binding;
+  switch (entry->kind) {
+    case E_varEntry: {
+      printf("%20s:%s\n", S_name(sym),
+             S_name(binding2sym(E_base_tenv(), entry->u.var.ty)));
+    } break;
+    case E_funEntry: {
+      printf("%20s", S_name(sym));
+      printf(":%12s ", S_name(binding2sym(E_base_tenv(), entry->u.fun.result)));
+      Ty_tyList tyList = entry->u.fun.formals;
+      printf("(");
+      if (tyList) {
+        while (tyList) {
+          printf("%s", S_name(binding2sym(E_base_tenv(), tyList->head)));
+          tyList = tyList->tail;
+          if (tyList) printf(", ");
+        }
+      }
+      printf(")\n");
+    } break;
+    default:
+      assert(0);  // unknown entry
+      break;
+  }
+}
+
+static void show_type(S_symbol sym, void* binding) {
+  if (!binding) {
+    printf("%20s:%s\n", S_name(sym), "NULL");
+    return;
+  }
+  Ty_ty ty = (Ty_ty)binding;
+  printf("%20s:", S_name(sym));
+  switch (ty->kind) {
+    case Ty_record: {
+      printf("{");
+      Ty_fieldList fieldsDec = ty->u.record;
+      while (fieldsDec) {
+        printf("%s:%s", S_name(fieldsDec->head->name),
+               S_name(binding2sym(E_base_tenv(), fieldsDec->head->ty)));
+        fieldsDec = fieldsDec->tail;
+        if (fieldsDec) printf(", ");
+      }
+      printf("}");
+    } break;
+    case Ty_nil: {
+      printf("nil");
+    } break;
+    case Ty_int: {
+      printf("int");
+    } break;
+    case Ty_string: {
+      printf("string");
+    } break;
+    case Ty_array: {
+      printf("array of %s", S_name(binding2sym(E_base_tenv(), ty->u.array)));
+    } break;
+    case Ty_name: {
+      printf("typename alias of %s", S_name(ty->u.name.sym));
+    } break;
+    case Ty_void:
+      printf("void");
+      break;
+    case -1: {
+      printf("typetype");
+    } break;
+    default:
+      assert(0);  // unknown type
+      break;
+  }
+  printf("\n");
+}
+
+void show_names() {
+  printf("\t====\tname table\t====\n\n");
+  S_dump(E_base_venv(), show_name);
+  printf("\n");
+}
+void show_types() {
+  printf("\t====\ttype table\t====\n\n");
+  S_dump(E_base_tenv(), show_type);
+  printf("\n");
 }
 
 /* for breakExp to know where to break */
@@ -256,7 +351,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
         }
 
         /* impelement ifStm */
-        //if(test is true)
+        // if(test is true)
         return expTy(NULL, then.ty);
       } else {  // if then
         return expTy(NULL, Ty_Void());
@@ -325,7 +420,8 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
         EM_error(exp->u.array.size->pos, "illegal array size");
       }
       struct expty init = transExp(venv, tenv, exp->u.array.init);
-      TYPE_CHECK_WITH_NIL_RECORD(exp->u.array.init->pos, init.ty, arrayTy->u.array);
+      TYPE_CHECK_WITH_NIL_RECORD(exp->u.array.init->pos, init.ty,
+                                 arrayTy->u.array);
       return expTy(NULL, arrayTy);
     } break;
     default:
@@ -446,10 +542,10 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
       if (dec->u.var.typ) {
         decTy = (Ty_ty)S_look(tenv, dec->u.var.typ);
         IS_TYPE(dec->pos, decTy);
-        if (decTy->kind == Ty_array){
+        if (decTy->kind == Ty_array) {
           TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy->u.array);
-        }
-        else  TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy);
+        } else
+          TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy);
       }
       S_enter(venv, dec->u.var.var, E_VarEntry(decTy));
     } break;
@@ -476,7 +572,7 @@ Ty_ty transTy(S_table tenv, A_ty ty) {
     case A_nameTy: {
       Ty_ty originTy = (Ty_ty)S_look(tenv, ty->u.name);
       IS_TYPE(ty->pos, originTy);
-      return Ty_Name(ty->u.name, originTy);
+      return Ty_Name(ty->u.name, originTy);  // originName originType
     } break;
     case A_recordTy: {
       A_fieldList AfieldList = ty->u.record;

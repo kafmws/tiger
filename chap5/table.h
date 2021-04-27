@@ -32,4 +32,9 @@ void *TAB_pop(TAB_table t);
  *  recent binding of any key to the oldest binding in the table */
 void TAB_dump(TAB_table t, void (*show)(void *key, void *value));
 
+/*
+ * not by input order, but in order for one key's bindings
+ */
+void TAB_dump_safe(TAB_table t, void (*show)(void *key, void *value));
+
 #endif

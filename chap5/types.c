@@ -24,13 +24,13 @@ Ty_ty Ty_String(void) { return &tystring; }
 static struct Ty_ty_ tyvoid = {Ty_void};
 Ty_ty Ty_Void(void) { return &tyvoid; }
 
-static struct Ty_ty_ tyrecordtype = {Ty_record};
+static struct Ty_ty_ tyrecordtype = {Ty_record, NULL};
 Ty_ty Ty_RecordType(void) { return &tyrecordtype; }
 
-static struct Ty_ty_ tyarraytype = {Ty_array};
+static struct Ty_ty_ tyarraytype = {Ty_array, .u.array = &tyarraytype};
 Ty_ty Ty_ArrayType(void) { return &tyarraytype; }
 
-static struct Ty_ty_ tytypetype = {-1};
+static struct Ty_ty_ tytypetype = {.kind = -1};
 Ty_ty Ty_TypeType(void) { return &tytypetype; }
 
 Ty_ty Ty_Record(Ty_fieldList fields) {

@@ -23,4 +23,7 @@ void         transDec(S_table venv, S_table tenv, A_dec dec);
 
 void  SEM_transProg(A_exp exp);
 
+void show_names();
+void show_types();
+
 #endif

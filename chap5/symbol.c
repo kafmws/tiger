@@ -43,16 +43,14 @@ S_symbol S_Symbol(string name) {
 
 string S_name(S_symbol sym) {
   assert(sym);
-  return sym->name; 
+  return sym->name;
 }
 
 S_table S_empty(void) { return TAB_empty(); }
 
 void S_enter(S_table t, S_symbol sym, void *value) { TAB_enter(t, sym, value); }
 
-void *S_look(S_table t, S_symbol sym) {
-  return TAB_look(t, sym);
-}
+void *S_look(S_table t, S_symbol sym) { return TAB_look(t, sym); }
 
 static struct S_symbol_ marksym = {"<mark>", 0};
 
@@ -69,5 +67,9 @@ void S_endScope(S_table t) {
 }
 
 void S_dump(S_table t, void (*show)(S_symbol sym, void *binding)) {
-  TAB_dump(t, (void (*)(void *, void *))show);
+  // can not be re-entered
+  // TAB_dump(t, (void (*)(void *, void *))show);
+
+  // can be re-entered but not entirely by order
+  TAB_dump_safe(t, (void (*)(void *, void *))show);
 }
