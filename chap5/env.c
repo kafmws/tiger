@@ -21,6 +21,7 @@ S_table E_base_tenv(void) {
   if (!tyEnv) {
     tyEnv = S_empty();
     S_enter(tyEnv, S_Symbol("int"),     Ty_Int());
+    S_enter(tyEnv, S_Symbol(" nil"),    Ty_Nil());
     S_enter(tyEnv, S_Symbol(" void"),   Ty_Void());/* one more blank
                                                     * for the real name
                                                     * 'void', add to the

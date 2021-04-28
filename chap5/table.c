@@ -87,6 +87,20 @@ void *TAB_pop(TAB_table t) {
   return b->key;
 }
 
+void *TAB_update(TAB_table t, void *key, void *newval) {
+  int index;
+  binder b;
+  assert(t && key);
+  index = ((unsigned)key) % TABSIZE;
+  for (b = t->table[index]; b; b = b->next)
+    if (b->key == key) {
+      void *old = b->value;
+      b->value = newval;
+      return old;
+    }
+  assert(0); // not found
+}
+
 //※不可重入  递归函数依赖于 t->top, 在 TAB_dump 中开启另一轮 TAB_dump 可能出错
 void TAB_dump(TAB_table t, void (*show)(void *key, void *value)) {  // orderly
   void *k = t->top;

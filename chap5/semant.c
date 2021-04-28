@@ -13,23 +13,34 @@ static Ty_ty actualTy(Ty_ty ty) {
   return ty;
 }
 
-#define BASE_CHECK(pos, actual, expect, env)                               \
+static bool ty_eq(Ty_ty tt, Ty_ty yy) {
+  return tt->kind == Ty_record && yy->kind == Ty_nil ||
+         yy->kind == Ty_record && tt->kind == Ty_nil || tt == yy;
+}
+
+#define TYPE_CHECK(pos, actual, expect)                                    \
   do {                                                                     \
     /*assert((expect));*/                                                  \
-    if ((actual) != (expect)) {                                            \
-      S_symbol required = binding2sym((env), (expect));                    \
-      S_symbol found = binding2sym((env), (actual));                       \
+    if (!ty_eq(actualTy((actual)), actualTy((expect)))) {                  \
+      S_symbol required = binding2sym(E_base_tenv(), (expect));            \
+      S_symbol found = binding2sym(E_base_tenv(), (actual));               \
       EM_error((pos), "'%s' required but '%s' is found", S_name(required), \
                S_name(found));                                             \
     }                                                                      \
   } while (0)
 
-#define TYPE_CHECK(pos, actual, expect) \
-  BASE_CHECK(pos, actualTy(actual), actualTy(expect), E_base_tenv());
+#define NAME_CHECK(pos, actual, expect)                                    \
+  do {                                                                     \
+    /*assert((expect));*/                                                  \
+    if (((actual) != (expect))) {                                          \
+      S_symbol required = binding2sym(E_base_venv(), (expect));            \
+      S_symbol found = binding2sym(E_base_venv(), (actual));               \
+      EM_error((pos), "'%s' required but '%s' is found", S_name(required), \
+               S_name(found));                                             \
+    }                                                                      \
+  } while (0)
 
-#define NAME_CHECK(pos, actual, expect) \
-  BASE_CHECK(pos, actual, expect, E_base_venv());
-
+// only actual is nil is permitted
 #define TYPE_CHECK_WITH_NIL_RECORD(pos, actual, expect) \
   do {                                                  \
     if (actualTy((expect))->kind != Ty_record ||        \
@@ -103,7 +114,8 @@ static void show_name(S_symbol sym, void* binding) {
     } break;
     case E_funEntry: {
       printf("%20s", S_name(sym));
-      printf(":%12s ", S_name(binding2sym(E_base_tenv(), entry->u.fun.result)));
+      printf(":%-12s ",
+             S_name(binding2sym(E_base_tenv(), entry->u.fun.result)));
       Ty_tyList tyList = entry->u.fun.formals;
       printf("(");
       if (tyList) {
@@ -330,6 +342,14 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
       }
     } break;
     case A_assignExp: {
+      // loop variable cannot be assigned
+      if (forOrWhile && forOrWhile->kind == A_forExp) {
+        // can not judge from name. like for ... do let decs in exp end
+        // someone in decs has the same name with loop variable
+
+        // exp->u.assign.var ==
+      }
+
       struct expty varE = transVar(venv, tenv, exp->u.assign.var);
       struct expty valE = transExp(venv, tenv, exp->u.assign.exp);
       TYPE_CHECK_WITH_NIL_RECORD(exp->pos, valE.ty, varE.ty);
@@ -342,7 +362,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
       then = transExp(venv, tenv, exp->u.iff.then);
       elsee = transExp(venv, tenv, exp->u.iff.elsee);
       if (exp->u.iff.elsee) {  // if then else
-        if (actualTy(then.ty) != actualTy(elsee.ty)) {
+        if (ty_eq(actualTy(then.ty), actualTy(elsee.ty)) == FALSE) {
           string thenType = S_name(binding2sym(tenv, then.ty));
           string elseType = S_name(binding2sym(tenv, elsee.ty));
           EM_error(exp->u.iff.then->pos,
@@ -358,26 +378,28 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
       }
     } break;
     case A_whileExp: {
+      A_exp old_forOrWhile = forOrWhile;
       forOrWhile = exp;
-      while (TRUE) {
-        struct expty test = transExp(venv, tenv, exp->u.whilee.test);
-        TYPE_CHECK(exp->u.whilee.test->pos, test.ty, Ty_Int());
-        if (FALSE && test.exp) {  // test true
-          struct expty body = transExp(venv, tenv, exp->u.whilee.body);
-        } else {
-          forOrWhile = NULL;
+      struct expty test = transExp(venv, tenv, exp->u.whilee.test);
+      TYPE_CHECK(exp->u.whilee.test->pos, test.ty, Ty_Int());
+      test.exp = test.ty;  // for active the loop
+      while (test.exp) {   // test true
+        struct expty body = transExp(venv, tenv, exp->u.whilee.body);
+        test = transExp(venv, tenv, exp->u.whilee.test);
+        if (TRUE) {  // test flase
           return expTy(NULL, Ty_Void());
         }
       }
-      forOrWhile = NULL;
+      forOrWhile = old_forOrWhile;
     } break;
     case A_forExp: {
+      A_exp old_forOrWhile = forOrWhile;
       forOrWhile = exp;
       struct expty lo = transExp(venv, tenv, exp->u.forr.lo);
       struct expty hi = transExp(venv, tenv, exp->u.forr.hi);
       TYPE_CHECK(exp->u.forr.lo->pos, lo.ty, Ty_Int());
       TYPE_CHECK(exp->u.forr.hi->pos, hi.ty, Ty_Int());
-      if (lo.exp > hi.exp) exp->u.forr.escape = 1;  // jump loop
+      if (lo.exp > hi.exp) exp->u.forr.escape = FALSE;  // jump loop
 
       // loop variable declaration
       S_beginScope(venv);
@@ -389,7 +411,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
         struct expty body = transExp(venv, tenv, exp->u.forr.body);
       }
       S_endScope(venv);
-      forOrWhile = NULL;
+      forOrWhile = old_forOrWhile;
       return expTy(NULL, Ty_Void());
     } break;
     case A_breakExp: {
@@ -406,6 +428,10 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
         transDec(venv, tenv, decList->head);
         decList = decList->tail;
       }
+
+      // show_types();
+      // show_names();
+
       struct expty body = transExp(venv, tenv, exp->u.let.body);
       S_endScope(tenv);
       S_endScope(venv);
@@ -551,12 +577,52 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
     } break;
     case A_typeDec: {
       A_nametyList tyDecList = dec->u.type;
-      // to do: deal with recursive type declaration
 
+      // todo : check the recursive declaration has no ring
+      //        and all typenames are different
+
+      // deal with recursive type declaration
+      while (tyDecList) {
+        S_enter(tenv, tyDecList->head->name,
+                Ty_Name(tyDecList->head->name, NULL));
+        tyDecList = tyDecList->tail;
+      }
+
+      // deal with the real define (first pass)
+      /* this pass process Non-recursive & self-recursive defs well,
+       * for mutual recursive defines transTy() only get a temporary
+       * type typeid. it will update at a later check loop.
+       */
+      tyDecList = dec->u.type;
       while (tyDecList) {
         // check type define in transTy
-        S_enter(tenv, tyDecList->head->name,
-                transTy(tenv, tyDecList->head->ty));
+
+        // S_enter(tenv, tyDecList->head->name,
+        //         transTy(tenv, tyDecList->head->ty));
+
+        // not enter a new binding, fill up the previous
+        Ty_ty trueTy = transTy(tenv, tyDecList->head->ty);
+        Ty_ty ty = (Ty_ty)S_update(tenv, tyDecList->head->name, trueTy);
+        // for self-recursive type, here non-recursive type alreay ok
+        if (trueTy->kind == Ty_record) {
+          // substitue the temp type in the fieldList
+          Ty_fieldList fieldList = trueTy->u.record;
+          while (fieldList) {
+            if (fieldList->head->ty == ty) fieldList->head->ty = trueTy;
+            fieldList = fieldList->tail;
+          }
+        }
+        tyDecList = tyDecList->tail;
+      }
+
+      // check each type is defined completely
+      tyDecList = dec->u.type;
+      while (tyDecList) {
+        if (S_look(tenv, tyDecList->head->name) ==
+            NULL) {  //× need a while loop
+          EM_error(tyDecList->head->ty->pos, "type '%s' is not well defined",
+                   S_name(tyDecList->head->name));
+        }
         tyDecList = tyDecList->tail;
       }
     } break;
