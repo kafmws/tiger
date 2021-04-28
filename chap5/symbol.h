@@ -3,6 +3,7 @@
 #define _SYMBOL_H
 
 #include "util.h"
+#include "table.h"
 
 /*
  * symbol.h - Symbols and symbol-tables
@@ -45,5 +46,8 @@ void S_endScope(S_table t);
 
 /* Add */
 void S_dump(S_table t, void (*show)(S_symbol sym, void *binding));
+
+// can not be re-entered & orderly access only one level
+void S_dump_enhance(S_table t, void (*f)(binder b));
 
 #endif

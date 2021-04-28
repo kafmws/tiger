@@ -10,20 +10,7 @@
 
 #include "util.h"
 
-#define TABSIZE 127
-
-typedef struct binder_ *binder;
-struct binder_ {
-  void *key;
-  void *value;
-  binder next;
-  void *prevtop;
-};
-struct TAB_table_ {
-  binder table[TABSIZE];
-  void *top;
-  int cnt;
-};
+/* open the structure def for S_dump_enhance */
 
 static binder Binder(void *key, void *value, binder next, void *prevtop) {
   binder b = checked_malloc(sizeof(*b));

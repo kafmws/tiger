@@ -10,7 +10,24 @@
  *  well-typed arguments and call the TAB_ functions.
  */
 
+
+/* open the structure def for S_dump_enhance */
+#define TABSIZE 127
+
 typedef struct TAB_table_ *TAB_table;
+
+typedef struct binder_ *binder;
+struct binder_ {
+  void *key;
+  void *value;
+  binder next;
+  void *prevtop;
+};
+struct TAB_table_ {
+  binder table[TABSIZE];
+  void *top;
+  int cnt;
+};
 
 /* Make a new table mapping "keys" to "values". */
 TAB_table TAB_empty(void);

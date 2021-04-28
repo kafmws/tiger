@@ -87,7 +87,7 @@ static bool ty_eq(Ty_ty tt, Ty_ty yy) {
   } while (0)
 
 /* better error msg */
-static void* obj_binding;
+static void* obj_binding;  // multiple useage
 
 static void get_typename(S_symbol sym, void* binding) {
   if (binding == obj_binding) obj_binding = sym;
@@ -191,6 +191,13 @@ void show_types() {
   printf("\t====\ttype table\t====\n\n");
   S_dump(E_base_tenv(), show_type);
   printf("\n");
+}
+
+static void convertToRealTy(binder b) {
+  // use 'obj_binding' save the Ty_name type which wait to convert
+  if (b->value == obj_binding) {
+    b->value = ((Ty_ty)obj_binding)->u.name.ty;
+  }
 }
 
 /* for breakExp to know where to break */
@@ -609,10 +616,17 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
       }
 
       /* make full use of 'actualTy()', which makes type system work well.
-       *  however, I want convert the unnecessary 'Ty_name' to its real ty.
+       * however, I want convert the unnecessary 'Ty_name' to its real ty.
        */
-      
-      
+      tyDecList = dec->u.type;
+      while (tyDecList) {
+        // exclude basic types
+        obj_binding = S_look(tenv, tyDecList->head->name);
+        // printf("convert %s to %s\n", );
+        // S_dump_enhance(tenv, convertToRealTy);
+        tyDecList = tyDecList->tail;
+      }
+
       // check each type is defined completely
       tyDecList = dec->u.type;
       while (tyDecList) {

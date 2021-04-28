@@ -75,3 +75,18 @@ void S_dump(S_table t, void (*show)(S_symbol sym, void *binding)) {
   // can be re-entered but not entirely by order
   TAB_dump_safe(t, (void (*)(void *, void *))show);
 }
+
+// can not be re-entered & orderly access only one level
+void S_dump_enhance(S_table t, void (*f)(binder b)) {
+  void *k = t->top;
+  int index = ((unsigned)k) % TABSIZE;
+  binder b = t->table[index];
+  if (b == NULL || b->value == markspace) return;
+  t->table[index] = b->next;
+  t->top = b->prevtop;
+  f(b);
+  S_dump_enhance(t, f);
+  assert(t->top == b->prevtop && t->table[index] == b->next);
+  t->top = k;
+  t->table[index] = b;
+}
