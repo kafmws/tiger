@@ -9,13 +9,15 @@
 
 static Ty_ty actualTy(Ty_ty ty) {
   if (!ty) return NULL;
-  while (ty->kind == Ty_name) ty = ty->u.name.ty;
+  // '&& ty->u.name.ty' for recursive type def
+  while (ty->kind == Ty_name && ty->u.name.ty) ty = ty->u.name.ty;
   return ty;
 }
 
 static bool ty_eq(Ty_ty tt, Ty_ty yy) {
-  return tt->kind == Ty_record && yy->kind == Ty_nil ||
-         yy->kind == Ty_record && tt->kind == Ty_nil || tt == yy;
+  return actualTy(tt)->kind == Ty_record && actualTy(yy)->kind == Ty_nil ||
+         actualTy(yy)->kind == Ty_record && actualTy(tt)->kind == Ty_nil ||
+         tt == yy;
 }
 
 #define TYPE_CHECK(pos, actual, expect)                                    \
@@ -429,8 +431,8 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
         decList = decList->tail;
       }
 
-      // show_types();
-      // show_names();
+      show_types();
+      show_names();
 
       struct expty body = transExp(venv, tenv, exp->u.let.body);
       S_endScope(tenv);
@@ -447,7 +449,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
       }
       struct expty init = transExp(venv, tenv, exp->u.array.init);
       TYPE_CHECK_WITH_NIL_RECORD(exp->u.array.init->pos, init.ty,
-                                 arrayTy->u.array);
+                                 actualTy(arrayTy)->u.array);
       return expTy(NULL, arrayTy);
     } break;
     default:
@@ -472,7 +474,7 @@ struct expty transVar(S_table venv, S_table tenv, A_var var) {
         TYPE_CHECK_NAME(var->pos, v.ty, E_enventry_Record());
         // exit(-1);
       } else {  // var is record
-        Ty_fieldList fieldList = v.ty->u.record;
+        Ty_fieldList fieldList = actualTy(v.ty)->u.record;
         while (fieldList) {
           if (fieldList->head->name == var->u.field.sym)
             return expTy(NULL, fieldList->head->ty);
@@ -494,7 +496,7 @@ struct expty transVar(S_table venv, S_table tenv, A_var var) {
       if (e.exp) {  // check index range
         EM_error(var->u.subscript.exp->pos, "illegal index of array");
       }
-      return expTy(NULL, v.ty->u.array);
+      return expTy(NULL, actualTy(v.ty)->u.array);
     } break;
     default:
       assert(0);  // unknown var
@@ -552,9 +554,10 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
           paramsDecList = paramsDecList->tail;
         }
         struct expty e = transExp(venv, tenv, func->body);
-        if (resultTy != Ty_Void()) {
+        if (actualTy(resultTy) != Ty_Void()) {
           // check body type and return type
-          if (!(e.ty == Ty_Nil() && resultTy->kind == Ty_record)) {
+          if (!(actualTy(e.ty) == Ty_Nil() &&
+                actualTy(resultTy)->kind == Ty_record)) {
             TYPE_CHECK(func->body->pos, e.ty, resultTy);
           }
         }
@@ -568,8 +571,8 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
       if (dec->u.var.typ) {
         decTy = (Ty_ty)S_look(tenv, dec->u.var.typ);
         IS_TYPE(dec->pos, decTy);
-        if (decTy->kind == Ty_array) {
-          TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy->u.array);
+        if (actualTy(decTy)->kind == Ty_array) {
+          TYPE_CHECK(dec->u.var.init->pos, e.ty, actualTy(decTy)->u.array);
         } else
           TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy);
       }
@@ -588,11 +591,7 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
         tyDecList = tyDecList->tail;
       }
 
-      // deal with the real define (first pass)
-      /* this pass process Non-recursive & self-recursive defs well,
-       * for mutual recursive defines transTy() only get a temporary
-       * type typeid. it will update at a later check loop.
-       */
+      // deal with the real define
       tyDecList = dec->u.type;
       while (tyDecList) {
         // check type define in transTy
@@ -602,24 +601,22 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
 
         // not enter a new binding, fill up the previous
         Ty_ty trueTy = transTy(tenv, tyDecList->head->ty);
-        Ty_ty ty = (Ty_ty)S_update(tenv, tyDecList->head->name, trueTy);
-        // for self-recursive type, here non-recursive type alreay ok
-        if (trueTy->kind == Ty_record) {
-          // substitue the temp type in the fieldList
-          Ty_fieldList fieldList = trueTy->u.record;
-          while (fieldList) {
-            if (fieldList->head->ty == ty) fieldList->head->ty = trueTy;
-            fieldList = fieldList->tail;
-          }
-        }
+        Ty_ty ty = (Ty_ty)S_look(tenv, tyDecList->head->name);
+        assert(ty);
+        assert(actualTy(ty)->kind == Ty_name);
+        ty->u.name.ty = trueTy;
         tyDecList = tyDecList->tail;
       }
 
+      /* make full use of 'actualTy()', which makes type system work well.
+       *  however, I want convert the unnecessary 'Ty_name' to its real ty.
+       */
+      
+      
       // check each type is defined completely
       tyDecList = dec->u.type;
       while (tyDecList) {
-        if (S_look(tenv, tyDecList->head->name) ==
-            NULL) {  //× need a while loop
+        if (S_look(tenv, tyDecList->head->name) == NULL) {
           EM_error(tyDecList->head->ty->pos, "type '%s' is not well defined",
                    S_name(tyDecList->head->name));
         }
