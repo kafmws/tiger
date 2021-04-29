@@ -55,4 +55,6 @@ void TAB_dump(TAB_table t, void (*show)(void *key, void *value));
  */
 void TAB_dump_safe(TAB_table t, void (*show)(void *key, void *value));
 
+int TAB_size(TAB_table t);
+
 #endif

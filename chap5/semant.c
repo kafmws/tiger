@@ -172,7 +172,7 @@ static void show_type(S_symbol sym, void* binding) {
     case Ty_void:
       printf("void");
       break;
-    case -1: {
+    case Ty_void + 1: {
       printf("typetype");
     } break;
     default:
@@ -187,6 +187,7 @@ void show_names() {
   S_dump(E_base_venv(), show_name);
   printf("\n");
 }
+
 void show_types() {
   printf("\t====\ttype table\t====\n\n");
   S_dump(E_base_tenv(), show_type);
@@ -316,7 +317,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
       // field names and types should be consistent with declaration
       Ty_ty recordType = (Ty_ty)S_look(tenv, exp->u.record.typ);
       IS_RECORD_TYPE(exp->pos, recordType);
-      Ty_fieldList fieldsDec = recordType->u.record;
+      Ty_fieldList fieldsDec = actualTy(recordType)->u.record;
       A_efieldList efields = exp->u.record.fields;
       while (efields && fieldsDec) {
         struct expty curFieldExpTy = transExp(venv, tenv, efields->head->exp);
@@ -460,7 +461,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
       return expTy(NULL, arrayTy);
     } break;
     default:
-      assert(0); /*unknown exp*/
+      assert(0); /* unknown exp */
       break;
   }
 }

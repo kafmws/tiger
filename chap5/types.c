@@ -30,7 +30,7 @@ Ty_ty Ty_RecordType(void) { return &tyrecordtype; }
 static struct Ty_ty_ tyarraytype = {Ty_array, .u.array = &tyarraytype};
 Ty_ty Ty_ArrayType(void) { return &tyarraytype; }
 
-static struct Ty_ty_ tytypetype = {.kind = -1};
+static struct Ty_ty_ tytypetype = {Ty_void + 1};
 Ty_ty Ty_TypeType(void) { return &tytypetype; }
 
 Ty_ty Ty_Record(Ty_fieldList fields) {
@@ -76,6 +76,7 @@ Ty_fieldList Ty_FieldList(Ty_field head, Ty_fieldList tail) {
   return p;
 }
 
+/* unuse */
 /* printing functions - used for debugging */
 static char str_ty[][12] = {"ty_record", "ty_nil",  "ty_int", "ty_string",
                             "ty_array",  "ty_name", "ty_void"};

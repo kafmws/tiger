@@ -21,9 +21,9 @@ int main(int argc, char *argv[]) {
   int indent = 0;
   for (int i = 1; i < argc; i++) {
     A_exp program = parse(argv[i]);
-    argv[i][strlen(argv[i]) - 4] = 0;
+    // argv[i][strlen(argv[i]) - 4] = 0;
     FILE *fp;
-    fp = fopen(argv[i], "w");
+    fp = fopen("out", "w");
     if (program) {
       /* check grammar */
       pr_exp(fp, program, indent);
@@ -39,8 +39,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "semant error in program\n");
       }
 
-      show_names();
-      show_types();
+      // show_types();
+      // show_names();
 
     } else {
       fprintf(stderr, "grammar error in program\n");

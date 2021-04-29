@@ -107,7 +107,7 @@ int TAB_size(TAB_table t) {
   // int i, cnt = 0;
   // for(i = 0;i<TABSIZE;i++){
   //   binder b = t->table[i];
-  //   if (b) {
+  //   while (b) {
   //     b = b->next;
   //     cnt++;
   //   }
@@ -120,11 +120,12 @@ void TAB_dump_safe(TAB_table t, void (*show)(void *key, void *value)) {
   int i;
   for (i = 0; i < TABSIZE; i++) {
     binder b = t->table[i];
-    if (b) {
+    while (b) {
       show(b->key, b->value);
       b = b->next;
     }
   }
+  assert(TAB_size(t) == t->cnt);
 }
 
 // by order

@@ -52,7 +52,9 @@ void S_enter(S_table t, S_symbol sym, void *value) { TAB_enter(t, sym, value); }
 
 void *S_look(S_table t, S_symbol sym) { return TAB_look(t, sym); }
 
-void *S_update(S_table t, S_symbol sym, void *newval) { return TAB_update(t, sym, newval); }
+void *S_update(S_table t, S_symbol sym, void *newval) {
+  return TAB_update(t, sym, newval);
+}
 
 static struct S_symbol_ marksym = {"<mark>", 0};
 
