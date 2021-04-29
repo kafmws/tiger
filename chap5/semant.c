@@ -148,7 +148,8 @@ static void show_type(S_symbol sym, void* binding) {
       Ty_fieldList fieldsDec = ty->u.record;
       while (fieldsDec) {
         printf("%s:%s", S_name(fieldsDec->head->name),
-               S_name(binding2sym(E_base_tenv(), fieldsDec->head->ty)));
+               S_name(binding2sym(E_base_tenv(),
+                                  fieldsDec->head->ty)));  // actualTy(
         fieldsDec = fieldsDec->tail;
         if (fieldsDec) printf(", ");
       }
@@ -167,14 +168,14 @@ static void show_type(S_symbol sym, void* binding) {
       printf("array of %s", S_name(binding2sym(E_base_tenv(), ty->u.array)));
     } break;
     case Ty_name: {
-      printf("typename alias of %s", S_name(ty->u.name.sym));
+      printf("type alias of %s", S_name(ty->u.name.sym));
     } break;
-    case Ty_void:
+    case Ty_void:  // void & typetype
       printf("void");
       break;
-    case Ty_void + 1: {
-      printf("typetype");
-    } break;
+    // case Ty_void + 1: {
+    //   printf("typetype");
+    // } break;
     default:
       assert(0);  // unknown type
       break;
@@ -196,8 +197,40 @@ void show_types() {
 
 static void convertToRealTy(binder b) {
   // use 'obj_binding' save the Ty_name type which wait to convert
-  if (b->value == obj_binding) {
-    b->value = ((Ty_ty)obj_binding)->u.name.ty;
+
+  // substitute Ty_name with its real ty
+  Ty_ty objTy = (Ty_ty)obj_binding;
+  if (b->value == obj_binding) {  // check itself
+    b->value = objTy->u.name.ty;
+  }
+  // check the same layer type's constituent (include itself)
+  Ty_ty ty = (Ty_ty)b->value;
+  if (ty->kind == Ty_name) ty = ty->u.name.ty;
+  // recursive defines only
+  switch (ty->kind) {
+    case Ty_record: {
+      Ty_fieldList fieldList = ty->u.record;
+      while (fieldList) {
+        if (fieldList->head->ty == objTy)
+          fieldList->head->ty = objTy->u.name.ty;
+        fieldList = fieldList->tail;
+      }
+    } break;
+    case Ty_array: {
+      if (ty->u.array == objTy) ty->u.array = objTy->u.name.ty;
+    } break;
+    case Ty_name: {
+      if (ty->u.name.ty == objTy) ty->u.name.ty = objTy->u.name.ty;
+    } break;
+    case Ty_nil:
+    case Ty_int:
+    case Ty_void:
+    case Ty_string:
+      // nothing should do
+      break;
+    default:
+      assert(0);  // unknown type
+      break;
   }
 }
 
@@ -618,13 +651,14 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
 
       /* make full use of 'actualTy()', which makes type system work well.
        * however, I want convert the unnecessary 'Ty_name' to its real ty.
+       * only that can I feel the beauty of the code.
        */
       tyDecList = dec->u.type;
       while (tyDecList) {
-        // exclude basic types
-        obj_binding = S_look(tenv, tyDecList->head->name);
         // printf("convert %s to %s\n", );
-        // S_dump_enhance(tenv, convertToRealTy);
+        // convert all this type to its real ty in current layer
+        obj_binding = S_look(tenv, tyDecList->head->name);
+        S_dump_enhance(tenv, convertToRealTy);
         tyDecList = tyDecList->tail;
       }
 

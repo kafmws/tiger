@@ -30,7 +30,7 @@ Ty_ty Ty_RecordType(void) { return &tyrecordtype; }
 static struct Ty_ty_ tyarraytype = {Ty_array, .u.array = &tyarraytype};
 Ty_ty Ty_ArrayType(void) { return &tyarraytype; }
 
-static struct Ty_ty_ tytypetype = {Ty_void + 1};
+static struct Ty_ty_ tytypetype = {Ty_void};
 Ty_ty Ty_TypeType(void) { return &tytypetype; }
 
 Ty_ty Ty_Record(Ty_fieldList fields) {
