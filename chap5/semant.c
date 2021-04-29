@@ -616,6 +616,8 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
           TYPE_CHECK(dec->u.var.init->pos, e.ty, actualTy(decTy)->u.array);
         } else
           TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy);
+      } else if(e.ty == Ty_Nil()) {// nil is not a real type
+        EM_error(dec->u.var.init->pos, "use 'nil' to initialize no-declar-type variable");
       }
       S_enter(venv, dec->u.var.var, E_VarEntry(decTy));
     } break;

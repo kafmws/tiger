@@ -1,0 +1,17 @@
+let
+    
+    type a = b
+    type b = c
+    type c = int
+    
+    type list = {a:int, b:list}
+
+    type C = {a:a, b:A, c:B, d:C, e:E}
+    type A = {Afirst:int, Asecond:B}
+    type B = {Bfirst:A, Bsecond:b}
+    type D = C
+    type E = string
+
+in
+
+end
