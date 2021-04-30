@@ -12,6 +12,21 @@ let
     type D = C
     type E = string
 
+    var list:=list{a=1, b=nil}
+
+    /* redefine */
+    type a = c
+
+    /* loop declaration */
+    type loop1 = loop2
+    type loop2 = loop1
+
+    /* loop declaration */
+    type l = o
+    type o = oo
+    type oo = p
+    type p = l
+
 in
 
 end

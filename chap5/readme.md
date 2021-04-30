@@ -1,3 +1,5 @@
+# how to finish Chap5
+
 ### 如何判定break语句属于哪个循环
 定义静态全局变量，进入for/while语句时记录当前exp，退出时置NULL，处理break语句时该变量即为其所在循环。
 以上操作无法处理嵌套的循环，内层循环会覆盖掉外层记录的for/while
@@ -14,6 +16,8 @@
 Tiger 允许相邻的类型声明、函数声明进行递归地定义（当然递归中不能出现重名与环），
 因此在typeDecList或者funcdecList中，先遍历一遍所有的声明，将名字填充到符号表，不进行绑定。
 再次遍历所有声明进行声明的解析进行绑定。
+（做完上述处理后，合理运用actualTy后类型系统就可以正常工作了，但是我仍然将所有非必要的
+Ty_name类型替换为了真正解析出的类型即ty.u->name.ty）
 当处理完当前一系列声明后，检查其中每个声明是否完整。
 
 ### 关于名字的重复定义（UNDO）
@@ -37,11 +41,13 @@ Tiger 中类型和变量名可以相同，而同名的变量和函数将相互�
 另一种“鸵鸟策略”是在处理类型声明时，将所有别名都绑定到真实定义的 Ty_ty，这样别名类型就名存实亡。
 而无法通过 Ty_ty 得到作为声明类型的类型别名。
 
+# Other tips
+
+### 建议先看一遍所有测试用例
 
 ### 小坑
 在 parsetest.c 中使用了 EM_anyErrors 判断是否存在错误，死活找不到符号
 最后用 nm 命令查看符号表，才发现 errormsg.c 中定义的是 anyErrors，errormsg.h 声明的是 EM_anyErrors.. :)
-
 
 
 ### ※
@@ -66,3 +72,47 @@ void TAB_dump(TAB_table t, void (*show)(void *key, void *value)) {
   t->table[index]=b;
 }
 ```
+
+# 一些选择
+
+### for/while 循环体必须是无值的
+```tiger
+/* test10.tig */
+/* error : body of while not unit */
+while(10 > 5) do 5+6
+
+
+/* test15.tig */
+/* error : if-then returns non unit */
+
+if 20 then 3
+```
+对此，Tiger 语法规范定义 while 的循环体必须不产生值（`must produce no value`）。
+在类型检查阶段，我最初实现为将循环体表达式的类型直接设为 Ty_void 返回。（表现为`不关心值`）
+后来发现如上测试用例，才发现 Tiger 希望的不产生值是指无值语句，这显然限制了很多语句的应用：
+如有 printmap 函数，打印特定数据并返回数据条数，单独作为循环体应当是有应用场景的。
+故此处暂时按`不关心值`实现。若此处要严格按照原定义，则判断表达式类型是否为Ty_void并反馈即可。
+
+### 语法的严格定义将语义分析中的错误提前至语法分析
+这里语法分析和语义分析各自是独立的一遍。
+```tiger
+/* tiger43.tig */
+
+/* initialize with unit and causing type mismatch in addition */
+
+let 
+	var a := ()
+in
+	a + 3
+end
+```
+根据 Tiger 语言规范，`()`是无值的。测试用例 tiger43.tig 中`var a := ()`在类型检查阶段产生错误。
+而在我的实现中，`var a := ()`根本无法通过语法检查。
+因为我将 exp 细分为 valExp（有值或可能有值的表达式）与 stm（无值表达式）
+而变量声明 vardec 定义为 VAR ID ASSIGN valExp，则该用例中的类型检查错误直接提前到语法分析阶段。
+
+当然，像 if-then-else 这样存在纯语法分析（语义分析可以同语法分析同时进行）无法发现的错误的情形，
+只能在语义分析中进一步检查。
+
+（为了过测试用例我差点把 valExp 改成了 exp，当然也不是不行，唉，就是玩儿，
+就这样虽然和测试用例表现不完全一致，但是就很好）
