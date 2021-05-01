@@ -1,0 +1,9 @@
+let 
+in
+    if(nil<>nil) then print("error");
+    let 
+        type list = {a:int}
+    in 
+        if(nil<>list{a=1}) then print("right")
+    end
+end

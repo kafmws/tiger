@@ -1,20 +1,29 @@
 #include "semant.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "absyn.h"
 #include "env.h"
 #include "errormsg.h"
 #include "table.h"
 
+int generic_list_cnt(void* head, void* next) {
+  if (!head) return 0;
+  return generic_list_cnt(*(void**)next,
+                          (char*)*(void**)next + ((char*)next - (char*)head)) +
+         1;
+}
+
 static Ty_ty actualTy(Ty_ty ty) {
   if (!ty) return NULL;
-  // '&& ty->u.name.ty' for recursive type def
-  while (ty->kind == Ty_name && ty->u.name.ty) ty = ty->u.name.ty;
+  while (ty->kind == Ty_name) ty = ty->u.name.ty;
   return ty;
 }
 
 static bool ty_eq(Ty_ty tt, Ty_ty yy) {
+  assert(tt || yy);
+  if (!tt || !yy) return FALSE;
   return actualTy(tt)->kind == Ty_record && actualTy(yy)->kind == Ty_nil ||
          actualTy(yy)->kind == Ty_record && actualTy(tt)->kind == Ty_nil ||
          tt == yy;
@@ -28,6 +37,8 @@ static bool ty_eq(Ty_ty tt, Ty_ty yy) {
       S_symbol found = binding2sym(E_base_tenv(), (actual));               \
       EM_error((pos), "'%s' required but '%s' is found", S_name(required), \
                S_name(found));                                             \
+      (actual) = (expect); /* assuming it's right for going on */          \
+      /*exit(-1); */                                                       \
     }                                                                      \
   } while (0)
 
@@ -39,6 +50,8 @@ static bool ty_eq(Ty_ty tt, Ty_ty yy) {
       S_symbol found = binding2sym(E_base_venv(), (actual));               \
       EM_error((pos), "'%s' required but '%s' is found", S_name(required), \
                S_name(found));                                             \
+      (actual) = (expect); /* assuming it's right for going on */          \
+      /*exit(-1); */                                                       \
     }                                                                      \
   } while (0)
 
@@ -264,6 +277,8 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
       // check function name and parameters
       E_enventry funcEntry = (E_enventry)S_look(venv, exp->u.call.func);
       IS_FUNCTION_NAME(exp->pos, funcEntry);
+      if ((funcEntry) == NULL || (funcEntry)->kind != E_funEntry)
+        return expTy(NULL, NULL);
 
       A_expList params = exp->u.call.args;
       Ty_tyList paramsTys = funcEntry->u.fun.formals;
@@ -326,7 +341,8 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
                 actualTy(left.ty)->kind != Ty_record &&
                 actualTy(left.ty)->kind != Ty_array) {
               EM_error(exp->u.op.left->pos,
-                       "int/string/record/array required but %s is found",
+                       "binary operator int/string/record/array required but "
+                       "%s is found",
                        S_name(binding2sym(tenv, left.ty)));
             }
             if (actualTy(right.ty) != Ty_Int() &&
@@ -334,7 +350,8 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
                 actualTy(right.ty)->kind != Ty_record &&
                 actualTy(right.ty)->kind != Ty_array) {
               EM_error(exp->u.op.right->pos,
-                       "int/string/record/array required but %s is found",
+                       "binary operator int/string/record/array required but "
+                       "%s is found",
                        S_name(binding2sym(tenv, right.ty)));
             }
             TYPE_CHECK(exp->u.op.right->pos, right.ty, left.ty);
@@ -505,6 +522,7 @@ struct expty transVar(S_table venv, S_table tenv, A_var var) {
       E_enventry entry = (E_enventry)S_look(venv, var->u.simple);
       if (entry == NULL || entry->kind != E_varEntry) {
         NAME_CHECK(var->pos, entry, E_enventry_Var());
+        return expTy(NULL, NULL);
       }
       return expTy(NULL, entry->u.var.ty);
     } break;
@@ -548,19 +566,33 @@ struct expty transVar(S_table venv, S_table tenv, A_var var) {
 void transDec(S_table venv, S_table tenv, A_dec dec) {
   switch (dec->kind) {
     case A_functionDec: {
-      A_fundecList fundecList = dec->u.function;
+      A_fundecList fundecList;
 
-      // to do : deal with mutual recursive functions
-
+      // deal with mutual recursive functions
+      fundecList = dec->u.function;
       while (fundecList) {
         A_fundec func = fundecList->head;
 
-        // from parameters get types
+        // from parameters get types and check param names
         A_fieldList paramsDecList = func->params;
         Ty_tyList paramsTyList = NULL;
         if (paramsDecList) {  // params not null
           Ty_tyList tyList = paramsTyList = Ty_TyList(NULL, NULL);
           while (paramsDecList) {
+            // check param name is distinct
+            {
+              A_fieldList nextList = paramsDecList->tail;
+              while (nextList) {
+                if (paramsDecList->head->name == nextList->head->name) {
+                  EM_error(nextList->head->pos,
+                           "param name '%s' has already uesd",
+                           S_name(nextList->head->name));
+                }
+                nextList = nextList->tail;
+              }
+            }
+
+            // build param type list
             tyList->head = (Ty_ty)S_look(tenv, paramsDecList->head->typ);
             if (tyList->head == NULL) {
               EM_error(paramsDecList->head->pos, "unknown type '%s'",
@@ -584,16 +616,30 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
           }
         }
         S_enter(venv, func->name, E_FunEntry(paramsTyList, resultTy));
+        fundecList = fundecList->tail;
+      }
+
+      // deal the parameters & func body
+      fundecList = dec->u.function;
+      while (fundecList) {
+        A_fundec func = fundecList->head;
 
         // deal the declaration of the parameters
+        E_enventry funcEntry = (E_enventry)S_look(venv, func->name);
+        assert(funcEntry && funcEntry->kind == E_funEntry);
+        A_fieldList paramsDecList = func->params;
+        Ty_tyList paramsTyList = funcEntry->u.fun.formals;
+
         S_beginScope(venv);
-        paramsDecList = func->params;
         while (paramsDecList) {
           S_enter(venv, paramsDecList->head->name,
                   E_VarEntry(paramsTyList->head));
           paramsTyList = paramsTyList->tail;
           paramsDecList = paramsDecList->tail;
         }
+
+        // deal the function body
+        Ty_ty resultTy = funcEntry->u.fun.result;
         struct expty e = transExp(venv, tenv, func->body);
         if (actualTy(resultTy) != Ty_Void()) {
           // check body type and return type
@@ -612,22 +658,48 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
       if (dec->u.var.typ) {
         decTy = (Ty_ty)S_look(tenv, dec->u.var.typ);
         IS_TYPE(dec->pos, decTy);
-        if (actualTy(decTy)->kind == Ty_array) {
-          TYPE_CHECK(dec->u.var.init->pos, e.ty, actualTy(decTy)->u.array);
-        } else
-          TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy);
-      } else if(e.ty == Ty_Nil()) {// nil is not a real type
-        EM_error(dec->u.var.init->pos, "use 'nil' to initialize no-declar-type variable");
+        TYPE_CHECK(dec->u.var.init->pos, e.ty, decTy);
+      } else if (e.ty == Ty_Nil()) {  // nil is not a real type
+        EM_error(dec->u.var.init->pos,
+                 "use 'nil' to initialize no-declar-type variable");
       }
       S_enter(venv, dec->u.var.var, E_VarEntry(decTy));
     } break;
     case A_typeDec: {
-      A_nametyList tyDecList = dec->u.type;
+      A_nametyList tyDecList;
 
-      // todo : check the recursive declaration has no ring
-      //        and all typenames are different
+      /* tasks orderly:
+       *        make sure all typenames are different.
+       *        parse all declarations' header orderly, make a NULL 'Ty_name'.
+       *        parse all declarations' body orderly, fill the 'ty' field
+       *              in its 'Ty_name' generated last setp and use 'Ty_name'
+       *              for recursive types' reference.
+       *        [substitue the unnecessary 'Ty_name' by its real type]
+       *        check the recursive declaration has no loop
+       */
 
-      // deal with recursive type declaration
+      // make sure typenames are different
+      {
+        bool sameNameError = FALSE;
+        tyDecList = dec->u.type;
+        while (tyDecList) {
+          A_nametyList pList = tyDecList->tail;
+          while (pList) {
+            if (tyDecList->head->name == pList->head->name) {
+              EM_error(pList->head->ty->pos,
+                       "same name in mutually recursive types");
+              sameNameError = TRUE;
+              break;
+            }
+            pList = pList->tail;
+          }
+          tyDecList = tyDecList->tail;
+        }
+        // if (sameNameError) exit(-1);
+      }
+
+      // deal with type declarations' header
+      tyDecList = dec->u.type;
       while (tyDecList) {
         S_enter(tenv, tyDecList->head->name,
                 Ty_Name(tyDecList->head->name, NULL));
@@ -645,33 +717,56 @@ void transDec(S_table venv, S_table tenv, A_dec dec) {
         // not enter a new binding, fill up the previous
         Ty_ty trueTy = transTy(tenv, tyDecList->head->ty);
         Ty_ty ty = (Ty_ty)S_look(tenv, tyDecList->head->name);
-        assert(ty);
-        assert(actualTy(ty)->kind == Ty_name);
+        assert(ty && ty->kind == Ty_name && ty->u.name.ty == NULL);
         ty->u.name.ty = trueTy;
         tyDecList = tyDecList->tail;
       }
 
-      /* make full use of 'actualTy()', which makes type system work well.
-       * however, I want convert the unnecessary 'Ty_name' to its real ty.
+      /* make full use of 'actualTy()', which makes the type system works well.
+       * however, I want to convert the unnecessary 'Ty_name' to its real type.
        * only that can I feel the beauty of the code.
        */
       tyDecList = dec->u.type;
       while (tyDecList) {
-        // printf("convert %s to %s\n", );
         // convert all this type to its real ty in current layer
-        obj_binding = S_look(tenv, tyDecList->head->name);
+        Ty_ty ty = S_look(tenv, tyDecList->head->name);
+        IS_TYPE(tyDecList->head->ty->pos, ty);
+        obj_binding = ty;
         S_dump_enhance(tenv, convertToRealTy);
         tyDecList = tyDecList->tail;
       }
 
-      // check each type is defined completely
-      tyDecList = dec->u.type;
-      while (tyDecList) {
-        if (S_look(tenv, tyDecList->head->name) == NULL) {
-          EM_error(tyDecList->head->ty->pos, "type '%s' is not well defined",
-                   S_name(tyDecList->head->name));
+      // check each type is defined completely (no loop)
+      {
+        tyDecList = dec->u.type;
+        // if a type is a alias (Ty_name) then the alias list must have at least
+        // a real type.
+        bool loopError = FALSE;
+        int decCnt = generic_list_cnt(tyDecList, &tyDecList->tail);
+        while (tyDecList) {
+          int aliasCnt = 0;
+          Ty_ty ty = S_look(tenv, tyDecList->head->name);
+          if (ty->kind == Ty_array && ty == ty->u.array) {
+            // type A is array of A
+            EM_error(tyDecList->head->ty->pos, "type '%s' is array of '%s'",
+                     S_name(tyDecList->head->name),
+                     S_name(tyDecList->head->name));
+            loopError = TRUE;
+          }
+          while (ty->kind == Ty_name) {  // is a alias
+            aliasCnt++;
+            if (aliasCnt > decCnt) {
+              EM_error(tyDecList->head->ty->pos,
+                       "type '%s' is in a declaration loop",
+                       S_name(tyDecList->head->name));
+              loopError = TRUE;
+              break;
+            }
+            ty = ty->u.name.ty;
+          }
+          tyDecList = tyDecList->tail;
         }
-        tyDecList = tyDecList->tail;
+        // if(loopError) exit(-1);
       }
     } break;
     default:
@@ -696,6 +791,22 @@ Ty_ty transTy(S_table tenv, A_ty ty) {
       if (AfieldList) {
         Ty_fieldList tyList = tyFieldList = Ty_FieldList(NULL, NULL);
         while (AfieldList) {
+          // check field names are different
+          {
+            bool sameNameError = FALSE;
+            A_fieldList restList = AfieldList->tail;
+            while (restList) {
+              if (AfieldList->head->name == restList->head->name) {
+                EM_error(restList->head->pos,
+                         "same field name '%s' in the same type",
+                         S_name(AfieldList->head->name));
+                sameNameError = TRUE;
+              }
+              restList = restList->tail;
+            }
+            // if(sameNameError) exit(-1);
+          }
+
           Ty_ty fieldTy = (Ty_ty)S_look(tenv, AfieldList->head->typ);
           IS_TYPE(AfieldList->head->pos, fieldTy);
           tyList->head = Ty_Field(AfieldList->head->name, fieldTy);
