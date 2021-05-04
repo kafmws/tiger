@@ -19,11 +19,12 @@ string Temp_labelstring(Temp_label s)
 {return S_name(s);
 }
 
-static int labels = 0;
+static int labels = 0;    /* address/label cnt */
 
-Temp_label Temp_newlabel(void)
-{char buf[100];
+Temp_label Temp_newlabel(string label)
+{char buf[128];
  sprintf(buf,"L%d",labels++);
+ if(label) {strcat(buf, "_"); strcat(buf, label);}
  return Temp_namedlabel(String(buf));
 }
 
@@ -32,7 +33,7 @@ Temp_label Temp_namedlabel(string s)
 {return S_Symbol(s);
 }
 
-static int temps = 100;
+static int temps = 100;   /* temporary variable */
 
 Temp_temp Temp_newtemp(void)
 {Temp_temp p = (Temp_temp) checked_malloc(sizeof (*p));
@@ -44,11 +45,25 @@ Temp_temp Temp_newtemp(void)
  return p;
 }
 
+Temp_tempList Temp_TempList(Temp_temp h, Temp_tempList t) {
+  Temp_tempList p = (Temp_tempList)checked_malloc(sizeof(*p));
+  p->head = h;
+  p->tail = t;
+  return p;
+}
 
+Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t) {
+  Temp_labelList p = (Temp_labelList)checked_malloc(sizeof(*p));
+  p->head = h;
+  p->tail = t;
+  return p;
+}
+
+/* below use later */
 
 struct Temp_map_ {TAB_table tab; Temp_map under;};
 
-
+// return a temporary variable name set
 Temp_map Temp_name(void) {
  static Temp_map m = NULL;
  if (!m) m=Temp_empty();
@@ -84,18 +99,6 @@ string Temp_look(Temp_map m, Temp_temp t) {
   if (s) return s;
   else if (m->under) return Temp_look(m->under, t);
   else return NULL;
-}
-
-Temp_tempList Temp_TempList(Temp_temp h, Temp_tempList t) 
-{Temp_tempList p = (Temp_tempList) checked_malloc(sizeof (*p));
- p->head=h; p->tail=t;
- return p;
-}
-
-Temp_labelList Temp_LabelList(Temp_label h, Temp_labelList t)
-{Temp_labelList p = (Temp_labelList) checked_malloc(sizeof (*p));
- p->head=h; p->tail=t;
- return p;
 }
 
 static FILE *outfile;
