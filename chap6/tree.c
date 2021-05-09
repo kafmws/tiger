@@ -128,7 +128,7 @@ T_relOp T_notRel(T_relOp r)
     case T_le: return T_gt;
     case T_ult: return T_uge;
     case T_uge: return T_ult;
-    case T_ule: return T_ugt ;
+    case T_ule: return T_ugt;
     case T_ugt: return T_ule;
   }
  assert(0); return 0;

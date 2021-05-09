@@ -37,8 +37,8 @@ static bool ty_eq(Ty_ty tt, Ty_ty yy) {
       S_symbol found = binding2sym(E_base_tenv(), (actual));               \
       EM_error((pos), "'%s' required but '%s' is found", S_name(required), \
                S_name(found));                                             \
+      /* Error recovery */                                                 \
       (actual) = (expect); /* assuming it's right for going on */          \
-      /*exit(-1); */                                                       \
     }                                                                      \
   } while (0)
 
@@ -50,8 +50,8 @@ static bool ty_eq(Ty_ty tt, Ty_ty yy) {
       S_symbol found = binding2sym(E_base_venv(), (actual));               \
       EM_error((pos), "'%s' required but '%s' is found", S_name(required), \
                S_name(found));                                             \
+      /* Error recovery */                                                 \
       (actual) = (expect); /* assuming it's right for going on */          \
-      /*exit(-1); */                                                       \
     }                                                                      \
   } while (0)
 
@@ -250,7 +250,7 @@ static void convertToRealTy(binder b) {
 /* for breakExp to know where to break */
 static A_exp forOrWhile;
 
-struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
+struct expty transExp(Tr_level lev, S_table venv, S_table tenv, A_exp exp) {
   if (exp == NULL) {  // No Value expression, like exp:() | ifThenExp's elsee |
                       // procedure
     return expTy(NULL, Ty_Void());
@@ -430,8 +430,8 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
                    thenType, elseType);
         }
 
-        /* impelement ifStm */
-        // if(test is true)
+        
+        
         return expTy(NULL, then.ty);
       } else {  // if then
         return expTy(NULL, Ty_Void());
@@ -516,7 +516,7 @@ struct expty transExp(S_table venv, S_table tenv, A_exp exp) {
   }
 }
 
-struct expty transVar(S_table venv, S_table tenv, A_var var) {
+struct expty transVar(Tr_level lev, S_table venv, S_table tenv, A_var var) {
   switch (var->kind) {
     case A_simpleVar: {
       E_enventry entry = (E_enventry)S_look(venv, var->u.simple);
@@ -563,7 +563,7 @@ struct expty transVar(S_table venv, S_table tenv, A_var var) {
   }
 }
 
-void transDec(S_table venv, S_table tenv, A_dec dec) {
+void transDec(Tr_level lev, S_table venv, S_table tenv, A_dec dec) {
   switch (dec->kind) {
     case A_functionDec: {
       A_fundecList fundecList;
@@ -835,5 +835,6 @@ struct expty expTy(Tr_exp exp, Ty_ty ty) {
 }
 
 void SEM_transProg(A_exp exp) {
-  struct expty e = transExp(E_base_venv(), E_base_tenv(), exp);
+  // I guess something calling main
+  struct expty e = transExp(Tr_outermost(), E_base_venv(), E_base_tenv(), exp);
 }

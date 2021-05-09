@@ -34,14 +34,17 @@ void yyerror(char *s)
 
 %start program
 
-%right OF
-%left ASSIGN
-%left OR
-%left AND
-%nonassoc EQ NEQ LT LE GT GE
-%left PLUS MINUS
-%left TIMES DIVIDE
-%left UMINUS
+%right      ID
+%right      LBRACK
+%right      OF
+%right      RPAREN
+%left       ASSIGN
+%left       OR
+%left       AND
+%nonassoc   EQ NEQ LT LE GT GE
+%left       PLUS MINUS
+%left       TIMES DIVIDE
+%left       UMINUS
 
 %left IFTHEN
 %left ELSE
@@ -70,6 +73,7 @@ valExp      : lvaule
 
 lvaule      : ID
             | lvaule DOT ID
+            | ID LBRACK valExp RBRACK
             | lvaule LBRACK valExp RBRACK
             ;
 

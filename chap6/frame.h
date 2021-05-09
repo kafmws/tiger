@@ -35,4 +35,6 @@ Temp_temp F_FP(void);
 /* transfer 'F_access' to 'T_exp' */
 T_exp F_Exp(F_access access, T_exp framePtr);
 
+T_exp F_ExternalCall(string name, T_expList args);
+
 #endif

@@ -117,3 +117,9 @@ T_exp F_Exp(F_access access, T_exp framePtr) {
   }
   assert(0);
 }
+
+T_exp F_ExternalCall(string name, T_expList args) {
+  // observe the external function invoke 'Calling Convention'
+  // pay attention to stack link & naming rules
+  return T_Call(T_Name(Temp_namedlabel(name)), args);
+}

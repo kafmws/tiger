@@ -97,11 +97,12 @@ T_stmList T_StmList(T_stm head, T_stmList tail);
 /* a statement followed by another. */
 T_stm T_Seq(T_stm left, T_stm right);
 
-/* define l to be the current machine code address, like a label in assembly. */
+/* define 'l' as current machine code address, like a label in assembly. */
+/* simply says: define a label use 'T_Lable', jmp to a label use 'T_Name' */
 T_stm T_Label(Temp_label l);
 
-/* transfer control flow to address e, labels represents all address which e may
- * transfer to. */
+/* transfer control flow to address 'e', labels are all addresses that 'e' may
+ * equal to. Its typical application is 'switch' statement. */
 T_stm T_Jump(T_exp e, Temp_labelList labels);
 
 /* condition transfer. evaluate left and right, and judge opExp,
@@ -135,7 +136,9 @@ T_exp T_Temp(Temp_temp t);
 /* evaluate stm first, then  */
 T_exp T_Eseq(T_stm s, T_exp e);
 
-/* symbol constant equivalent to label in assembly, exp */
+/* generate a symbol constant equivalent to 'label' in assembly, exp */
+/* as an argument, like 'jmp', 'call''s target or represents a string */
+/* simply says: define a label use 'T_Lable', jmp to a label use 'T_Name' */
 T_exp T_Name(Temp_label label);
 
 /* integer, exp */
