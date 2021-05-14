@@ -18,10 +18,10 @@ struct expty expTy(Tr_exp exp, Ty_ty ty);
 
 struct expty transVar(Tr_level lev, S_table venv, S_table tenv, A_var var);
 struct expty transExp(Tr_level lev, S_table venv, S_table tenv, A_exp exp);
-void         transDec(Tr_level lev, S_table venv, S_table tenv, A_dec dec);
+Tr_exp       transDec(Tr_level lev, S_table venv, S_table tenv, A_dec dec);
        Ty_ty transTy (              S_table tenv,  A_ty ty );
 
-void  SEM_transProg(A_exp exp);
+F_fragList SEM_transProg(A_exp exp);
 
 void show_names();
 void show_types();

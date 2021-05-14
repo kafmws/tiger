@@ -15,7 +15,28 @@ Tr_access Tr_Access(Tr_level level, F_access access) {
   return a;
 }
 
-Tr_accessList Tr_formals(Tr_level level) {}
+static Tr_accessList Tr_AccessList(Tr_access head, Tr_accessList tail) {
+  Tr_accessList list = checked_malloc(sizeof(*list));
+  list->head = head;
+  list->tail = tail;
+  return list;
+}
+
+// return 'Tr_access' of parameters in 'level'
+Tr_accessList Tr_formals(Tr_level level) {
+  F_accessList accessList = F_formals(level->frame);
+  Tr_accessList list = NULL, listTail = NULL;
+  if (accessList) list = listTail = Tr_AccessList(NULL, NULL);
+  while (accessList) {
+    list->head = Tr_Access(level, accessList->head);
+    accessList = accessList->tail;
+    if (accessList) {
+      listTail->tail = Tr_AccessList(NULL, NULL);
+      listTail = listTail->tail;
+    }
+  }
+  return list;
+}
 
 struct Tr_level_ {
   F_frame frame;
@@ -91,11 +112,6 @@ struct Tr_exp_ {
   } u;
 };
 
-struct Tr_expList_ {
-  Tr_exp head;
-  struct Tr_expList_ *tail;
-};
-
 Tr_expList Tr_ExpList(Tr_exp head, Tr_expList tail) {
   Tr_expList list = checked_malloc(sizeof(*list));
   list->head = head;
@@ -137,16 +153,16 @@ static T_exp toEx(Tr_exp e) {
       break;
     case Tr_cx: {
       // transfer bool to integer
-      Temp_label t = Temp_newlabel(NULL);  // mov val, 1;
-      Temp_label f = Temp_newlabel(NULL);  // cjmp e->u.cx.stm;
-      doPatch(e->u.cx.trues, t);           // f:
-      doPatch(e->u.cx.falses, f);          //  mov val, 0;
-      Temp_temp val = Temp_newtemp();      // t:
-      return T_Eseq(                       //  val
-          T_Move(T_Temp(val), T_Const(1)),
+      Temp_label t = Temp_newlabel("true");   // mov r, 1;
+      Temp_label f = Temp_newlabel("false");  // cjmp e->u.cx.stm;
+      doPatch(e->u.cx.trues, t);              // f:
+      doPatch(e->u.cx.falses, f);             //  mov r, 0;
+      Temp_temp r = Temp_newtemp();           // t:
+      return T_Eseq(                          //  r
+          T_Move(T_Temp(r), T_Const(1)),
           T_Eseq(e->u.cx.stm,
-                 T_Eseq(T_Label(f), T_Eseq(T_Move(T_Temp(val), T_Const(0)),
-                                           T_Eseq(T_Label(t), T_Temp(val))))));
+                 T_Eseq(T_Label(f), T_Eseq(T_Move(T_Temp(r), T_Const(0)),
+                                           T_Eseq(T_Label(t), T_Temp(r))))));
     }
     default:
       assert(0);  // unknow Tr_exp
@@ -195,6 +211,18 @@ static struct Cx toCx(Tr_exp e) {
   }
 }
 
+static F_fragList frags;
+static F_fragList fragsTail;
+
+void addFrag(F_frag f) {
+  if (!fragsTail) {
+    frags = fragsTail = F_FragList(f, NULL);
+  } else {
+    fragsTail->tail = F_FragList(f, NULL);
+    fragsTail = fragsTail->tail;
+  }
+}
+
 //          translate functions         //
 
 /* trace static link from current level to declare level which the var def in.
@@ -236,7 +264,7 @@ Tr_exp Tr_IntExp(int i) { return Tr_Ex(T_Const(i)); }
 
 Tr_exp Tr_StringExp(string s) {
   Temp_label label = Temp_newlabel(s);
-  // F_string(label, s);
+  addFrag(F_StringFrag(label, s));
   return Tr_Ex(T_Name(label));
 }
 
@@ -366,73 +394,220 @@ Tr_exp Tr_OpNeqExp(Tr_exp left, Tr_exp right) {
 
 Tr_exp Tr_IfThenExp(Tr_exp testExp, Tr_exp thenExp) {
   struct Cx test = toCx(testExp);
-  // Temp_label t = Temp_newlabel(NULL);
-  Temp_label f = Temp_newlabel(NULL);
-  // doPatch(test.falses, t); // not necessary
+  Temp_label t = Temp_newlabel("t");
+  Temp_label f = Temp_newlabel("f");
+  doPatch(test.falses, t);  // not necessary
   doPatch(test.falses, f);
-  // assume jmp clause only jmp false                    // jmpF test f
-  T_stm then = toNx(thenExp);                            // then
-  T_stm stm = T_Seq(test.stm, T_Seq(then, T_Label(f)));  // f:
+  // assume jmp clause only jmp false
+
+  T_stm then = toNx(thenExp);  // jmpF test f
+  T_stm stm =                  // then
+      T_Seq(test.stm, T_Seq(T_Label(t), T_Seq(then, T_Label(f))));  // f:
   return Tr_Nx(stm);
 }
 
 Tr_exp Tr_IfThenElseExp(Tr_exp testExp, Tr_exp thenExp, Tr_exp elseExp) {
   struct Cx test = toCx(testExp);
-  // Temp_label t = Temp_newlabel(NULL);
-  Temp_label f = Temp_newlabel(NULL);
-  Temp_label end = Temp_newlabel(NULL);
-  // doPatch(test.falses, t);
+  Temp_label t = Temp_newlabel("t");
+  Temp_label f = Temp_newlabel("f");
+  Temp_label end = Temp_newlabel("end");
+  doPatch(test.falses, t);  // not necessary
   doPatch(test.falses, f);
 
   if (thenExp->kind == Tr_nx) {  // no value ifThenElse
     assert(elseExp->kind == Tr_nx);
-    T_stm then = unNx(thenExp);
-    T_stm elsee = unNx(elseExp);
+    T_stm then = toNx(thenExp);
+    T_stm elsee = toNx(elseExp);
     // assume jmp clause only jmp false
-    T_stm stm = T_Seq(  // jmpF test.stm f
-        test.stm,       // then
-        T_Seq(          // jmp end
-            then,       // f:
-            T_Seq(T_Jump(T_Name(end), Temp_LabelList(end, NULL)),    // elsee
-                  T_Seq(T_Label(f), T_Seq(elsee, T_Label(end))))));  // end:
+    T_stm stm = T_Seq(   // jmpF test.stm f
+        test.stm,        // then
+        T_Seq(           // jmp end
+            T_Label(t),  // f:
+            T_Seq(       // elsee
+                then,    // end:
+                T_Seq(T_Jump(T_Name(end), Temp_LabelList(end, NULL)),
+                      T_Seq(T_Label(f), T_Seq(elsee, T_Label(end)))))));
     return Tr_Nx(stm);
-  } else if (thenExp->kind == Tr_cx || elseExp->kind == Tr_cx) {
-    struct Cx thenCx = toCx(thenExp);
-
-  } else if (thenExp->kind == Tr_ex && elseExp->kind == Tr_ex) {
+  }
+  //  else if (thenExp->kind == Tr_cx || elseExp->kind == Tr_cx) {
+  //   struct Cx thenCx = toCx(thenExp);
+  // }
+  // else if (thenExp->kind == Tr_ex && thenExp->kind == Tr_ex)
+  else if (thenExp->kind == Tr_ex || thenExp->kind == Tr_cx) {
     T_exp then = unEx(thenExp);
     T_exp elsee = unEx(elseExp);
     Temp_temp r = Temp_newtemp();
 
     T_exp exp = T_Eseq(
         T_Eseq(
-            test.stm,                        // jmpF test.stm f
-            T_Eseq(T_Move(T_Temp(r), then),  // mov r then
-                   T_Eseq(T_Jump(T_Name(end),
-                                 Temp_LabelList(end, NULL)),      // jmp end
-                          T_Eseq(T_Label(f),                      // f:
-                                 T_Seq(T_Move(T_Temp(r), elsee),  // mov r elsee
-                                       T_Label(end)))))),         // end:
+            test.stm,  // jmpF test.stm f
+            T_Eseq(
+                T_Label(t),                                       // mov r then
+                T_Eseq(T_Move(T_Temp(r), then),                   // jmp end
+                       T_Eseq(T_Jump(T_Name(end),                 // f:
+                                     Temp_LabelList(end, NULL)),  // mov r elsee
+                              T_Eseq(T_Label(f),                  // end:
+                                     T_Seq(T_Move(T_Temp(r), elsee),
+                                           T_Label(end))))))),
         T_Temp(r));
     return Tr_Ex(exp);
   } else
     assert(0);
 }
 
-Tr_exp Tr_CallExp(Tr_level lev, Temp_label name, Tr_expList args) {
+// fields list has no type, becase of all type are the same length in Tiger.
+Tr_exp Tr_RecordExp(Tr_expList fields) {
+  int fieldCnt = 0;
+  T_stm stm = NULL;
+  Temp_temp r = Temp_newtemp();  // store the address of the record var
+  if (fields) {
+    stm = T_Move(T_Mem(T_Binop(T_plus, T_Temp(r), fieldCnt * F_WORD_SIZE)),
+                 toEx(fields->head));
+    fieldCnt++;
+    fields = fields->tail;
+    while (fields) {
+      // MOVE(MEM(BINOP(addr, cnt*F_WORD_SIZE)), exp)
+      stm = T_Seq(
+          stm, T_Move(T_Mem(T_Binop(T_plus, T_Temp(r), fieldCnt * F_WORD_SIZE)),
+                      toEx(fields->head)));
+      fieldCnt++;
+      fields = fields->tail;
+    }
+  }
+  T_exp recordAddr =
+      F_ExternalCall("allocRecord", T_ExpList(fieldCnt * F_WORD_SIZE, NULL));
+  /* the code above is a little interesting, we discribe how to fill the fields
+     before we really allocate actual memory to the variable. that's the magic
+     of the INDIRECTION of the address 'r'. we use it while it isn't real. */
+  return Tr_Ex(T_Eseq(T_Seq(T_Move(T_Temp(r), recordAddr), stm), T_Temp(r)));
+}
+
+Tr_exp Tr_SeqExp(Tr_expList reverseSeqList) {
+  T_exp exp = NULL;
+  while (reverseSeqList) {
+    exp = (exp ? T_Eseq(toNx(reverseSeqList->head), exp)
+               : toEx(reverseSeqList->head));
+    reverseSeqList = reverseSeqList->tail;
+  }
+  return reverseSeqList ? exp : Tr_Nop();
+}
+
+Tr_exp Tr_AssignExp(Tr_exp varE, Tr_exp valE) {
+  return Tr_Nx(T_Move(toEx(varE), toEx(valE)));
+}
+
+Tr_exp Tr_ArrayExp(Tr_exp sizeExp, Tr_exp initExp) {
+  assert(sizeExp->kind == Tr_ex &&
+         (initExp->kind == Tr_ex ||
+          initExp->kind == Tr_nx));  // Tr_nx for record array
+  T_exp array = F_ExternalCall(
+      "initArray", T_ExpList(toEx(sizeExp), T_ExpList(toEx(initExp), NULL)));
+  return Tr_Ex(array);
+}
+
+Tr_exp Tr_WhileExp(Tr_exp testExp, Tr_exp bodyExp, Temp_label done) {
+  assert(done);
+  Temp_label whilee = Temp_newlabel("while");
+  Temp_label loop = Temp_newlabel("loop");
+  /* 'done' label generate before 'Tr_WhileExp' is invoked,
+     because the 'break' in the body needs it. */
+  // Temp_label done = Temp_newlabel("done");
+  struct Cx test = toCx(testExp);
+  doPatch(test.trues, loop);
+  doPatch(test.falses, done);
+  T_stm stm = T_Seq(
+      T_Label(whilee),                                // whilee:
+      T_Seq(test.stm,                                 // jmpF test done
+            T_Seq(T_Name(loop),                       // t:(not necessary)
+                  T_Seq(toNx(bodyExp),                // body
+                        T_Seq(T_Jump(T_Name(whilee),  // jmp whilee
+                                     Temp_LabelList(whilee, NULL)),  // done:
+                              T_Label(done))))));
+  return Tr_Nx(stm);
+}
+
+Tr_exp Tr_ForExp(Tr_access loopVar, Tr_exp loExp, Tr_exp hiExp, Tr_exp bodyExp,
+                 Temp_label done) {
+  T_exp lo = toEx(loExp);
+  T_exp hi = toEx(hiExp);
+  T_exp var = F_Exp(loopVar->access, loopVar->level->frame);
+  Temp_label loop = Temp_newlabel("loop");
+  Temp_label inc = Temp_newlabel("inc");
+
+  T_stm stm = T_Seq(
+      T_Move(var, lo),                                        // mov var, lo
+      T_Seq(                                                  // jle var hi loop
+          T_Cjump(T_le, var, hi, loop, done),                 // jmp done
+          T_Seq(T_Label(loop),                                // loop:
+                T_Seq(                                        //   body
+                    toNx(bodyExp),                            // jlt var hi inc
+                    T_Seq(T_Cjump(T_lt, var, hi, inc, done),  // jmp done
+                          T_Seq(T_Label(inc),                 // inc var
+                                T_Seq(T_Move(var,             // jmp loop
+                                             T_Binop(T_plus, var, T_Const(1))),
+                                      T_Seq(T_Jump(T_Name(loop),  // done:
+                                                   Temp_TempList(loop, NULL)),
+                                            T_Label(done)))))))));
+  return Tr_Nx(stm);
+}
+
+Tr_exp Tr_CallExp(Tr_level curLev, Tr_level funcLev, Temp_label name,
+                  Tr_expList args) {
   T_expList argsList = NULL;
   if (args) {  // transfer Tr_expList to T_expList
     argsList = T_ExpList(NULL, NULL);
     T_expList tail = argsList;
     while (args) {
-      tail->head = args->head;
-      tail->tail = NULL;
+      tail->head = toEx(args->head);
       if (args->tail) {
-        tail = T_ExpList(NULL, NULL);
+        tail->tail = T_ExpList(NULL, NULL);
+        tail = tail->tail;
       }
       args = args->tail;
     }
   }
-  T_exp callExp = T_Call(toEx(T_Label(label)), argsList);
+
+  /* add static link to the outermost
+   * 1. call the direct inner layer function:
+   *             pass current framePtr as static link
+   * 2. call itself or the same layer functions:
+   *             pass itself static link
+   * 3. call the outer layer function:
+   *             trace outer layer frame from the static link in its frame
+   */
+
+  T_exp staticLink = NULL;
+  if (funcLev->parent == curLev) {  // call direct inner layer function
+    staticLink = T_Temp(F_FP());
+  } else if (funcLev ==
+             curLev) {  // self-recursive or invoke the same layer func
+    staticLink = F_Exp(staticLinkFormal(curLev->frame), T_Temp(F_FP()));
+  } else {  // call the outer layer function
+    Tr_level lev = curLev;
+    staticLink = T_Temp(F_FP());
+    while (lev != funcLev /*->parent*/) {  // find the static outer layer
+      staticLink = F_Exp(staticLinkFormal(lev->frame), staticLink);
+      lev = lev->parent;
+    }
+  }
+  if (staticLink) {
+    argsList = T_ExpList(staticLink, argsList);
+  }
+
+  T_exp callExp = T_Call(toEx(T_Name(name)), argsList);
   return Tr_Ex(callExp);
 }
+
+Tr_exp Tr_BreakExp(Temp_label done) {
+  return Tr_Nx(T_Jump(T_Name(done), Temp_LabelList(done, NULL)));
+}
+
+Tr_exp Tr_InitExp(Tr_access access, Tr_exp initExp) {
+  return Tr_Nx(T_Move(F_Exp(access->access, T_Temp(F_FP())), toEx(initExp)));
+}
+
+Tr_exp Tr_Nop() { return Tr_Ex(T_Const(0)); }
+
+void Tr_procEntryExit(Tr_level level, Tr_exp body, Tr_accessList formals) {}
+
+F_fragList Tr_getResult() { return frags; }

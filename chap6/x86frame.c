@@ -62,7 +62,7 @@ F_frame F_newFrame(Temp_label name, U_boolList formals) {
 
   // assume all args are escape and put them in the frame.
   if (formals) {
-    // one for return address, one for old ebp(?)
+    // one for return address, one for old ebp(*)
     int offset = F_WORD_SIZE << 2;
     f->formals = checked_malloc(sizeof(*f->formals));
     F_accessList accessList = f->formals;
@@ -103,10 +103,6 @@ F_access F_allocLocal(F_frame f, bool escape) {
 
 F_access staticLinkFormal(F_frame f) { return f->formals->head; }
 
-//
-
-Temp_temp F_FP(void) {}
-
 /* transfer 'F_access' to 'T_exp', access a variable */
 T_exp F_Exp(F_access access, T_exp framePtr) {
   if (access->kind == In_Frame) {
@@ -119,7 +115,56 @@ T_exp F_Exp(F_access access, T_exp framePtr) {
 }
 
 T_exp F_ExternalCall(string name, T_expList args) {
-  // observe the external function invoke 'Calling Convention'
+  // observe the external function 'Calling Convention' when invoke
   // pay attention to stack link & naming rules
   return T_Call(T_Name(Temp_namedlabel(name)), args);
+}
+
+F_frag F_StringFrag(Temp_label label, string str) {
+  F_frag f = checked_malloc(sizeof(*f));
+  f->kind = F_stringFrag;
+  f->u.stringg.label = label;
+  f->u.stringg.str = str;
+  return f;
+}
+
+F_frag F_ProcFrag(T_stm body, F_frame frame) {
+  F_frag f = checked_malloc(sizeof(*f));
+  f->kind = F_procFrag;
+  f->u.proc.body = body;
+  f->u.proc.frame = frame;
+  return f;
+}
+
+F_fragList F_FragList(F_frag head, F_fragList tail) {
+  F_fragList list = checked_malloc(sizeof(*list));
+  list->head = head;
+  list->tail = tail;
+  return list;
+}
+
+//-------- general register implementation in x86
+
+// Frame pointer register
+Temp_temp F_FP(void) {
+  static Temp_temp ebp;
+  if (!ebp) ebp = Temp_newtemp();
+  return ebp;
+}
+
+// Return value register
+Temp_temp F_RV(void) {
+  static Temp_temp eax;
+  if (!eax) eax = Temp_newtemp();
+  return eax;
+}
+
+//--------- maintain the frame
+
+T_stm F_procEntryExit1(F_frame frame, T_stm stm) {
+  return stm;
+}
+
+T_stm F_procEntryExit3(F_frame frame, T_stm stm) {
+  return NULL;
 }
