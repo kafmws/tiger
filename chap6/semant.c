@@ -356,16 +356,24 @@ struct expty transExp(Tr_level lev, S_table venv, S_table tenv, A_exp exp) {
           }
           switch (op) {
             case A_gtOp:
-              opExp = Tr_OpGtExp(left.exp, right.exp);
+              opExp = actualTy(left.ty) == Ty_String()
+                          ? Tr_OpGtString(left.exp, right.exp)
+                          : Tr_OpGtExp(left.exp, right.exp);
               break;
             case A_geOp:
-              opExp = Tr_OpGeExp(left.exp, right.exp);
+              opExp = actualTy(left.ty) == Ty_String()
+                          ? Tr_OpGeString(left.exp, right.exp)
+                          : Tr_OpGeExp(left.exp, right.exp);
               break;
             case A_ltOp:
-              opExp = Tr_OpLtExp(left.exp, right.exp);
+              opExp = actualTy(left.ty) == Ty_String()
+                          ? Tr_OpLtString(left.exp, right.exp)
+                          : Tr_OpLtExp(left.exp, right.exp);
               break;
             case A_leOp:
-              opExp = Tr_OpLeExp(left.exp, right.exp);
+              opExp = actualTy(left.ty) == Ty_String()
+                          ? Tr_OpLeString(left.exp, right.exp)
+                          : Tr_OpLeExp(left.exp, right.exp);
               break;
           }
         } break;
@@ -398,9 +406,13 @@ struct expty transExp(Tr_level lev, S_table venv, S_table tenv, A_exp exp) {
             TYPE_CHECK(exp->u.op.right->pos, right.ty, left.ty);
           }
           if (op == A_eqOp)
-            opExp = Tr_OpEqExp(left.exp, right.exp);
+            opExp = actualTy(left.ty) == Ty_String()
+                        ? Tr_OpEqString(left.exp, right.exp)
+                        : Tr_OpEqExp(left.exp, right.exp);
           else if (op == A_neqOp)
-            opExp = Tr_OpNeqExp(left.exp, right.exp);
+            opExp = actualTy(left.ty) == Ty_String()
+                        ? Tr_OpNeqString(left.exp, right.exp)
+                        : Tr_OpNeqExp(left.exp, right.exp);
         } break;
         default:
           assert(0); /*unknown operator*/
@@ -448,7 +460,8 @@ struct expty transExp(Tr_level lev, S_table venv, S_table tenv, A_exp exp) {
       return expTy(fields, recordType);
     } break;
     case A_seqExp: {
-      // seqExp must not NULL
+      // seqExp must not NULL, except '()' produce a 'A_SeqExp(EM_tokPos, NULL)'
+      if (!exp->u.seq) return expTy(Tr_Nop(), Ty_Void()); // for '()'
       A_expList expList = exp->u.seq;
       Tr_expList reverseSeqList = NULL;
       while (expList) {
@@ -504,7 +517,6 @@ struct expty transExp(Tr_level lev, S_table venv, S_table tenv, A_exp exp) {
       struct expty test = transExp(lev, venv, tenv, exp->u.whilee.test);
       TYPE_CHECK(exp->u.whilee.test->pos, test.ty, Ty_Int());
       struct expty body = transExp(lev, venv, tenv, exp->u.whilee.body);
-      test = transExp(lev, venv, tenv, exp->u.whilee.test);
       Tr_exp whileExp = Tr_WhileExp(test.exp, body.exp, doneLabel);
       doneLabel = old_doneLabel;
       return expTy(whileExp, Ty_Void());
@@ -547,8 +559,8 @@ struct expty transExp(Tr_level lev, S_table venv, S_table tenv, A_exp exp) {
         decList = decList->tail;
       }
 
-      show_types();
-      show_names();
+      // show_types();
+      // show_names();
 
       struct expty body = transExp(lev, venv, tenv, exp->u.let.body);
       reverseExpSeq = Tr_ExpList(body.exp, reverseExpSeq);
@@ -561,9 +573,9 @@ struct expty transExp(Tr_level lev, S_table venv, S_table tenv, A_exp exp) {
       IS_ARRAY_TYPE(exp->pos, arrayTy);
       struct expty size = transExp(lev, venv, tenv, exp->u.array.size);
       TYPE_CHECK(exp->u.array.size->pos, size.ty, Ty_Int());
-      if (size.exp) {  // check array size
-        EM_error(exp->u.array.size->pos, "illegal array size");
-      }
+      // if (size.exp) {  // check array size
+      // EM_error(exp->u.array.size->pos, "illegal array size");
+      // }
       struct expty init = transExp(lev, venv, tenv, exp->u.array.init);
       TYPE_CHECK_WITH_NIL_RECORD(exp->u.array.init->pos, init.ty,
                                  actualTy(arrayTy)->u.array);

@@ -2,9 +2,9 @@
 #ifndef _TRANSLATE_H
 #define _TRANSLATE_H
 
+#include "frame.h"
 #include "temp.h"
 #include "util.h"
-#include "frame.h"
 
 typedef struct Tr_level_ *Tr_level;
 
@@ -57,8 +57,16 @@ Tr_exp Tr_OpGeExp(Tr_exp left, Tr_exp right);
 Tr_exp Tr_OpLtExp(Tr_exp left, Tr_exp right);
 Tr_exp Tr_OpLeExp(Tr_exp left, Tr_exp right);
 
+Tr_exp Tr_OpGtString(Tr_exp left, Tr_exp right);
+Tr_exp Tr_OpGeString(Tr_exp left, Tr_exp right);
+Tr_exp Tr_OpLtString(Tr_exp left, Tr_exp right);
+Tr_exp Tr_OpLeString(Tr_exp left, Tr_exp right);
+
 Tr_exp Tr_OpEqExp(Tr_exp left, Tr_exp right);
 Tr_exp Tr_OpNeqExp(Tr_exp left, Tr_exp right);
+
+Tr_exp Tr_OpEqString(Tr_exp left, Tr_exp right);
+Tr_exp Tr_OpNeqString(Tr_exp left, Tr_exp right);
 
 Tr_exp Tr_IfThenExp(Tr_exp testExp, Tr_exp thenExp);
 Tr_exp Tr_IfThenElseExp(Tr_exp testExp, Tr_exp thenExp, Tr_exp elseExp);

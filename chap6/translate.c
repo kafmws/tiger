@@ -148,8 +148,8 @@ static T_exp toEx(Tr_exp e) {
       if (e->u.nx->kind == T_EXP) {
         return e->u.nx->u.EXP;
       }
-      // return T_Eseq(e->u.nx, T_Const(0));
-      assert(0);  // no value get
+      return T_Eseq(e->u.nx, T_Const(0));
+      // assert(0);  // no value get
       break;
     case Tr_cx: {
       // transfer bool to integer
@@ -173,6 +173,8 @@ static T_exp toEx(Tr_exp e) {
 static T_stm toNx(Tr_exp e) {
   switch (e->kind) {
     case Tr_ex:
+      if (e->u.ex->kind == T_ESEQ && e->u.ex->u.ESEQ.exp->kind == T_CONST)
+        return e->u.ex->u.ESEQ.stm;
       return T_Exp(e->u.ex);
     case Tr_nx:
       return e->u.nx;
@@ -296,101 +298,46 @@ Tr_exp Tr_OpDivideExp(Tr_exp left, Tr_exp right) {
    NOT ANY actual value, no bool/int value is produced
    while it is implyed by executing different branches */
 
-Tr_exp Tr_OpGtExp(Tr_exp left, Tr_exp right) {
-  T_stm stm;
-  T_exp l = toEx(left), r = toEx(right);
-  if (l->kind == T_CONST)
-    stm = T_Cjump(T_gt, l, r, NULL, NULL);
-  else if (l->kind == T_NAME) {
-    T_exp res =
-        F_ExternalCall("stringCompare", T_ExpList(l, T_ExpList(r, NULL)));
-    stm = T_Cjump(T_gt, res, T_Const(0), NULL, NULL);
-  } else
-    assert(0);
-  patchList trues = PatchList(&stm->u.CJUMP.true, NULL);
-  patchList falses = PatchList(&stm->u.CJUMP.false, NULL);
+#define CMP_OP_ABBR_BASE(op, left, right)                  \
+  T_stm stm = T_Cjump((op), (left), (right), NULL, NULL);  \
+  patchList trues = PatchList(&stm->u.CJUMP.true, NULL);   \
+  patchList falses = PatchList(&stm->u.CJUMP.false, NULL); \
   return Tr_Cx(trues, falses, stm);
-}
 
-Tr_exp Tr_OpGeExp(Tr_exp left, Tr_exp right) {
-  T_stm stm;
-  T_exp l = toEx(left), r = toEx(right);
-  if (l->kind == T_CONST)
-    stm = T_Cjump(T_ge, l, r, NULL, NULL);
-  else if (l->kind == T_NAME) {
-    T_exp res =
-        F_ExternalCall("stringCompare", T_ExpList(l, T_ExpList(r, NULL)));
-    stm = T_Cjump(T_ge, res, T_Const(0), NULL, NULL);
-  } else
-    assert(0);
-  patchList trues = PatchList(&stm->u.CJUMP.true, NULL);
-  patchList falses = PatchList(&stm->u.CJUMP.false, NULL);
-  return Tr_Cx(trues, falses, stm);
-}
+#define CMP_OP_ABBR(op) CMP_OP_ABBR_BASE(op, toEx(left), toEx(right))
 
-Tr_exp Tr_OpLtExp(Tr_exp left, Tr_exp right) {
-  T_stm stm;
-  T_exp l = toEx(left), r = toEx(right);
-  if (l->kind == T_CONST)
-    stm = T_Cjump(T_lt, l, r, NULL, NULL);
-  else if (l->kind == T_NAME) {
-    T_exp res =
-        F_ExternalCall("stringCompare", T_ExpList(l, T_ExpList(r, NULL)));
-    stm = T_Cjump(T_lt, res, T_Const(0), NULL, NULL);
-  } else
-    assert(0);
-  patchList trues = PatchList(&stm->u.CJUMP.true, NULL);
-  patchList falses = PatchList(&stm->u.CJUMP.false, NULL);
-  return Tr_Cx(trues, falses, stm);
-}
+#define CMP_OP_ABBR_STRING(op)                                               \
+  T_exp res = F_ExternalCall(                                                \
+      "stringCompare", T_ExpList(toEx(left), T_ExpList(toEx(right), NULL))); \
+  CMP_OP_ABBR_BASE(op, res, T_Const(0))
 
-Tr_exp Tr_OpLeExp(Tr_exp left, Tr_exp right) {
-  T_stm stm;
-  T_exp l = toEx(left), r = toEx(right);
-  if (l->kind == T_CONST)
-    stm = T_Cjump(T_le, l, r, NULL, NULL);
-  else if (l->kind == T_NAME) {
-    T_exp res =
-        F_ExternalCall("stringCompare", T_ExpList(l, T_ExpList(r, NULL)));
-    stm = T_Cjump(T_le, res, T_Const(0), NULL, NULL);
-  } else
-    assert(0);
-  patchList trues = PatchList(&stm->u.CJUMP.true, NULL);
-  patchList falses = PatchList(&stm->u.CJUMP.false, NULL);
-  return Tr_Cx(trues, falses, stm);
-}
+Tr_exp Tr_OpGtExp(Tr_exp left, Tr_exp right) { CMP_OP_ABBR(T_gt); }
 
-Tr_exp Tr_OpEqExp(Tr_exp left, Tr_exp right) {
-  T_stm stm;
-  T_exp l = toEx(left), r = toEx(right);
-  if (l->kind == T_CONST || l->kind == T_MEM)
-    // T_MEM, compare reference (address) for record of array variable
-    stm = T_Cjump(T_eq, l, r, NULL, NULL);
-  else if (l->kind == T_NAME) {
-    T_exp res = F_ExternalCall("stringEqual", T_ExpList(l, T_ExpList(r, NULL)));
-    stm = T_Cjump(T_eq, res, T_Const(1), NULL, NULL);
-  } else
-    assert(0);
-  patchList trues = PatchList(&stm->u.CJUMP.true, NULL);
-  patchList falses = PatchList(&stm->u.CJUMP.false, NULL);
-  return Tr_Cx(trues, falses, stm);
-}
+Tr_exp Tr_OpGeExp(Tr_exp left, Tr_exp right) { CMP_OP_ABBR(T_ge); }
 
-Tr_exp Tr_OpNeqExp(Tr_exp left, Tr_exp right) {
-  T_stm stm;
-  T_exp l = toEx(left), r = toEx(right);
-  if (l->kind == T_CONST || l->kind == T_MEM)
-    // T_MEM, compare reference (address) for record of array variable
-    stm = T_Cjump(T_ne, l, r, NULL, NULL);
-  else if (l->kind == T_NAME) {
-    T_exp res = F_ExternalCall("stringEqual", T_ExpList(l, T_ExpList(r, NULL)));
-    stm = T_Cjump(T_eq, res, T_Const(0), NULL, NULL);
-  } else
-    assert(0);
-  patchList trues = PatchList(&stm->u.CJUMP.true, NULL);
-  patchList falses = PatchList(&stm->u.CJUMP.false, NULL);
-  return Tr_Cx(trues, falses, stm);
-}
+Tr_exp Tr_OpLtExp(Tr_exp left, Tr_exp right) { CMP_OP_ABBR(T_lt); }
+
+Tr_exp Tr_OpLeExp(Tr_exp left, Tr_exp right) { CMP_OP_ABBR(T_le); }
+
+Tr_exp Tr_OpGtString(Tr_exp left, Tr_exp right) { CMP_OP_ABBR_STRING(T_gt); }
+
+Tr_exp Tr_OpGeString(Tr_exp left, Tr_exp right) { CMP_OP_ABBR_STRING(T_ge); }
+
+Tr_exp Tr_OpLtString(Tr_exp left, Tr_exp right) { CMP_OP_ABBR_STRING(T_lt); }
+
+Tr_exp Tr_OpLeString(Tr_exp left, Tr_exp right) { CMP_OP_ABBR_STRING(T_le); }
+
+Tr_exp Tr_OpEqExp(Tr_exp left, Tr_exp right) { CMP_OP_ABBR(T_eq); }
+
+Tr_exp Tr_OpNeqExp(Tr_exp left, Tr_exp right) { CMP_OP_ABBR(T_ne); }
+
+Tr_exp Tr_OpEqString(Tr_exp left, Tr_exp right) { CMP_OP_ABBR_STRING(T_ne); }
+
+Tr_exp Tr_OpNeqString(Tr_exp left, Tr_exp right) { CMP_OP_ABBR_STRING(T_eq); }
+
+#undef CMP_OP_ABBR_BASE
+#undef CMP_OP_ABBR
+#undef CMP_OP_ABBR_STRING
 
 Tr_exp Tr_IfThenExp(Tr_exp testExp, Tr_exp thenExp) {
   struct Cx test = toCx(testExp);
@@ -485,6 +432,7 @@ Tr_exp Tr_RecordExp(Tr_expList fields) {
 Tr_exp Tr_SeqExp(Tr_expList reverseSeqList) {
   T_exp exp = NULL;
   while (reverseSeqList) {
+    if (!reverseSeqList->head) continue;
     exp = (exp ? T_Eseq(toNx(reverseSeqList->head), exp)
                : toEx(reverseSeqList->head));
     reverseSeqList = reverseSeqList->tail;
@@ -609,6 +557,10 @@ Tr_exp Tr_InitExp(Tr_access access, Tr_exp initExp) {
 
 Tr_exp Tr_Nop() { return Tr_Ex(T_Const(0)); }
 
-void Tr_procEntryExit(Tr_level level, Tr_exp body, Tr_accessList formals) {}
+void Tr_procEntryExit(Tr_level level, Tr_exp body, Tr_accessList formals) {
+  // generate maintain frame instructions
+  T_stm func = F_procEntryExit1(level->frame, toNx(body));
+  addFrag(F_ProcFrag(func, level->frame));
+}
 
 F_fragList Tr_getResult() { return frags; }

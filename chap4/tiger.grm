@@ -104,7 +104,7 @@ program     : exp                                             {absyn_root=$1;}
 
 exp         : valExp             %prec OF                     {$$=$1;}
             | stm                                             {$$=$1;}
-            | LPAREN RPAREN                                   {$$=NULL;}
+            | LPAREN RPAREN                                   {$$=A_SeqExp(EM_tokPos, NULL);}
             | LPAREN exp RPAREN                               {$$=$2;}
             ;
 
