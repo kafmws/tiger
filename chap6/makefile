@@ -1,20 +1,23 @@
-a.out: parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o parse.o prabsyn.o symbol.o table.o semant.o types.o env.o
-	cc -g parsetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o parse.o prabsyn.o symbol.o table.o semant.o types.o env.o
+a.out: translatetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o parse.o prabsyn.o\
+symbol.o table.o semant.o types.o env.o translate.o temp.o x86frame.o tree.o
+	cc -g translatetest.o y.tab.o lex.yy.o errormsg.o util.o absyn.o parse.o prabsyn.o\
+    symbol.o table.o semant.o types.o env.o translate.o temp.o x86frame.o tree.o
 
-parsetest.o: parsetest.c absyn.h errormsg.h parse.h symbol.h util.h prabsyn.h semant.h
-	cc -g -c parsetest.c
+translatetest.o: translatetest.c absyn.h errormsg.h parse.h symbol.h util.h prabsyn.h\
+semant.h prabsyn.h
+	cc -g -c translatetest.c
 
-absyn.o: absyn.c absyn.h symbol.h util.h
-	cc -g -c absyn.c
+translate.o: translate.c translate.h frame.h
+	cc -g -c translate.c
 
-parse.o: parse.c absyn.h errormsg.h parse.h symbol.h util.h
-	cc -g -c parse.c
+x86frame.o: x86frame.c frame.h tree.h
+	cc -g -c x86frame.c
 
-prabsyn.o: prabsyn.c prabsyn.h absyn.h util.h symbol.h
-	cc -g -c prabsyn.c
+tree.o: tree.c tree.h util.h symbol.h temp.h
+	cc -g -c tree.c
 
-symbol.o: symbol.c util.h symbol.h table.h
-	cc -g -c symbol.c
+temp.o: temp.c temp.h util.h symbol.h table.h
+	cc -g -c temp.c
 
 table.o: table.c util.h table.h
 	cc -g -c table.c
@@ -25,8 +28,20 @@ types.o: types.c types.h symbol.h
 env.o: env.c env.h
 	cc -g -c env.c
 
-semant.o:semant.c semant.h absyn.h env.h errormsg.h table.h
+semant.o:semant.c semant.h absyn.h env.h errormsg.h table.h translate.h frame.h
 	cc -g -c semant.c
+
+absyn.o: absyn.c absyn.h symbol.h util.h
+	cc -g -c absyn.c
+
+symbol.o: symbol.c util.h symbol.h table.h
+	cc -g -c symbol.c
+
+parse.o: parse.c absyn.h errormsg.h parse.h symbol.h util.h
+	cc -g -c parse.c
+
+prabsyn.o: prabsyn.c prabsyn.h absyn.h util.h symbol.h
+	cc -g -c prabsyn.c
 
 y.tab.o: y.tab.c absyn.h
 	cc -g -c y.tab.c

@@ -7,6 +7,7 @@
 #include "types.h"
 #include "symbol.h"
 #include "frame.h"
+#include "translate.h"
 
 struct expty {
     Tr_exp exp;

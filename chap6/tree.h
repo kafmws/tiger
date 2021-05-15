@@ -7,6 +7,8 @@
 #ifndef _TREE_H
 #define _TREE_H
 
+#include "temp.h"
+
 typedef struct T_stm_ *T_stm;
 typedef struct T_exp_ *T_exp;
 typedef struct T_expList_ *T_expList;

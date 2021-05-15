@@ -4,6 +4,7 @@
 
 #include "temp.h"
 #include "util.h"
+#include "frame.h"
 
 typedef struct Tr_level_ *Tr_level;
 
@@ -34,7 +35,7 @@ Tr_accessList Tr_formals(Tr_level level);
 
 /*          translate functions          */
 
-Tr_exp Tr_simpleVar(Tr_access access, Tr_level level);
+Tr_exp Tr_SimpleVar(Tr_access access, Tr_level level);
 
 Tr_exp Tr_FieldVar(Tr_exp var, int fieldCnt);
 

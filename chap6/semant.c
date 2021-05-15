@@ -250,14 +250,14 @@ static void convertToRealTy(binder b) {
 }
 
 /* for breakExp to know where to break */
-static A_exp doneLabel;
+static Temp_label doneLabel;
 
 struct expty transExp(Tr_level lev, S_table venv, S_table tenv, A_exp exp) {
   if (exp == NULL) {  // No Value expression, like exp:() | ifThenExp's elsee |
                       // procedure
     return expTy(Tr_Nop(), Ty_Void());
   }
-  A_exp old_doneLabel = NULL;
+  Temp_label old_doneLabel = NULL;
   switch (exp->kind) {
       /*A_varExp, A_nilExp, A_intExp, A_stringExp, A_callExp, A_opExp,
        * A_recordExp, A_seqExp, A_assignExp, A_ifExp, A_whileExp, A_forExp,
@@ -584,7 +584,7 @@ struct expty transVar(Tr_level lev, S_table venv, S_table tenv, A_var var) {
         NAME_CHECK(var->pos, entry, E_enventry_Var());
         return expTy(Tr_Nop(), Ty_Void());
       }
-      Tr_exp exp = Tr_simpleVar(entry->u.var.access, lev);
+      Tr_exp exp = Tr_SimpleVar(entry->u.var.access, lev);
       return expTy(exp, entry->u.var.ty);
     } break;
     case A_fieldVar: {

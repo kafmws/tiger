@@ -22,6 +22,11 @@ static Tr_accessList Tr_AccessList(Tr_access head, Tr_accessList tail) {
   return list;
 }
 
+struct Tr_level_ {
+  F_frame frame;
+  Tr_level parent;
+};
+
 // return 'Tr_access' of parameters in 'level'
 Tr_accessList Tr_formals(Tr_level level) {
   F_accessList accessList = F_formals(level->frame);
@@ -37,11 +42,6 @@ Tr_accessList Tr_formals(Tr_level level) {
   }
   return list;
 }
-
-struct Tr_level_ {
-  F_frame frame;
-  Tr_level parent;
-};
 
 Tr_level Tr_outermost() {
   static Tr_level outer;
@@ -238,7 +238,7 @@ static T_exp traceStaticLink(Tr_level current, Tr_level declare) {
 }
 
 Tr_exp Tr_SimpleVar(Tr_access access, Tr_level lev) {
-  return Tr_Ex(F_Exp(access, traceStaticLink(lev, access->level)));
+  return Tr_Ex(F_Exp(access->access, traceStaticLink(lev, access->level)));
 }
 
 Tr_exp Tr_FieldVar(Tr_exp var, int fieldCnt) {
@@ -434,21 +434,20 @@ Tr_exp Tr_IfThenElseExp(Tr_exp testExp, Tr_exp thenExp, Tr_exp elseExp) {
   // }
   // else if (thenExp->kind == Tr_ex && thenExp->kind == Tr_ex)
   else if (thenExp->kind == Tr_ex || thenExp->kind == Tr_cx) {
-    T_exp then = unEx(thenExp);
-    T_exp elsee = unEx(elseExp);
+    T_exp then = toEx(thenExp);
+    T_exp elsee = toEx(elseExp);
     Temp_temp r = Temp_newtemp();
 
     T_exp exp = T_Eseq(
-        T_Eseq(
-            test.stm,  // jmpF test.stm f
-            T_Eseq(
-                T_Label(t),                                       // mov r then
-                T_Eseq(T_Move(T_Temp(r), then),                   // jmp end
-                       T_Eseq(T_Jump(T_Name(end),                 // f:
+        T_Seq(
+            test.stm,                              // jmpF test.stm f
+            T_Seq(T_Label(t),                      // mov r then
+                  T_Seq(T_Move(T_Temp(r), then),   // jmp end
+                        T_Seq(T_Jump(T_Name(end),  // f:
                                      Temp_LabelList(end, NULL)),  // mov r elsee
-                              T_Eseq(T_Label(f),                  // end:
-                                     T_Seq(T_Move(T_Temp(r), elsee),
-                                           T_Label(end))))))),
+                              T_Seq(T_Label(f),                   // end:
+                                    T_Seq(T_Move(T_Temp(r), elsee),
+                                          T_Label(end))))))),
         T_Temp(r));
     return Tr_Ex(exp);
   } else
@@ -461,21 +460,22 @@ Tr_exp Tr_RecordExp(Tr_expList fields) {
   T_stm stm = NULL;
   Temp_temp r = Temp_newtemp();  // store the address of the record var
   if (fields) {
-    stm = T_Move(T_Mem(T_Binop(T_plus, T_Temp(r), fieldCnt * F_WORD_SIZE)),
-                 toEx(fields->head));
+    stm = T_Move(
+        T_Mem(T_Binop(T_plus, T_Temp(r), T_Const(fieldCnt * F_WORD_SIZE))),
+        toEx(fields->head));
     fieldCnt++;
     fields = fields->tail;
     while (fields) {
       // MOVE(MEM(BINOP(addr, cnt*F_WORD_SIZE)), exp)
-      stm = T_Seq(
-          stm, T_Move(T_Mem(T_Binop(T_plus, T_Temp(r), fieldCnt * F_WORD_SIZE)),
-                      toEx(fields->head)));
+      stm = T_Seq(stm, T_Move(T_Mem(T_Binop(T_plus, T_Temp(r),
+                                            T_Const(fieldCnt * F_WORD_SIZE))),
+                              toEx(fields->head)));
       fieldCnt++;
       fields = fields->tail;
     }
   }
-  T_exp recordAddr =
-      F_ExternalCall("allocRecord", T_ExpList(fieldCnt * F_WORD_SIZE, NULL));
+  T_exp recordAddr = F_ExternalCall(
+      "allocRecord", T_ExpList(T_Const(fieldCnt * F_WORD_SIZE), NULL));
   /* the code above is a little interesting, we discribe how to fill the fields
      before we really allocate actual memory to the variable. that's the magic
      of the INDIRECTION of the address 'r'. we use it while it isn't real. */
@@ -489,7 +489,7 @@ Tr_exp Tr_SeqExp(Tr_expList reverseSeqList) {
                : toEx(reverseSeqList->head));
     reverseSeqList = reverseSeqList->tail;
   }
-  return reverseSeqList ? exp : Tr_Nop();
+  return reverseSeqList ? Tr_Ex(exp) : Tr_Nop();
 }
 
 Tr_exp Tr_AssignExp(Tr_exp varE, Tr_exp valE) {
@@ -518,7 +518,7 @@ Tr_exp Tr_WhileExp(Tr_exp testExp, Tr_exp bodyExp, Temp_label done) {
   T_stm stm = T_Seq(
       T_Label(whilee),                                // whilee:
       T_Seq(test.stm,                                 // jmpF test done
-            T_Seq(T_Name(loop),                       // t:(not necessary)
+            T_Seq(T_Label(loop),                      // t:(not necessary)
                   T_Seq(toNx(bodyExp),                // body
                         T_Seq(T_Jump(T_Name(whilee),  // jmp whilee
                                      Temp_LabelList(whilee, NULL)),  // done:
@@ -530,7 +530,8 @@ Tr_exp Tr_ForExp(Tr_access loopVar, Tr_exp loExp, Tr_exp hiExp, Tr_exp bodyExp,
                  Temp_label done) {
   T_exp lo = toEx(loExp);
   T_exp hi = toEx(hiExp);
-  T_exp var = F_Exp(loopVar->access, loopVar->level->frame);
+  // assume lo, hi is instant value.
+  T_exp var = F_Exp(loopVar->access, T_Temp(F_FP()));
   Temp_label loop = Temp_newlabel("loop");
   Temp_label inc = Temp_newlabel("inc");
 
@@ -546,7 +547,7 @@ Tr_exp Tr_ForExp(Tr_access loopVar, Tr_exp loExp, Tr_exp hiExp, Tr_exp bodyExp,
                                 T_Seq(T_Move(var,             // jmp loop
                                              T_Binop(T_plus, var, T_Const(1))),
                                       T_Seq(T_Jump(T_Name(loop),  // done:
-                                                   Temp_TempList(loop, NULL)),
+                                                   Temp_LabelList(loop, NULL)),
                                             T_Label(done)))))))));
   return Tr_Nx(stm);
 }
@@ -594,7 +595,7 @@ Tr_exp Tr_CallExp(Tr_level curLev, Tr_level funcLev, Temp_label name,
     argsList = T_ExpList(staticLink, argsList);
   }
 
-  T_exp callExp = T_Call(toEx(T_Name(name)), argsList);
+  T_exp callExp = T_Call(T_Name(name), argsList);
   return Tr_Ex(callExp);
 }
 
