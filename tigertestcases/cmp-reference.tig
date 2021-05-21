@@ -1,0 +1,39 @@
+let 
+    /* simple situation */
+    type A = {a:int}
+
+    var  a := A{a=1}
+    var  b := A{a=1}
+    var  c := b
+
+    type B = {a:int, b:B}
+    var  x := B{a=1, b=nil}
+in
+    if(a=b)
+    then print("a = b\n")
+    else print("a != b\n")
+    ;
+    
+    if(c=b)
+    then print("c = b\n")
+    else print("c != b\n")
+    ;
+
+    x.b := x;
+    if(x.b=x)
+    then print("x.b = x\n")
+    else print("x.b != x\n")
+    ;
+    
+    let 
+        var xx := B{a=1, b=nil}
+    in
+        xx.b := x.b;
+        if(xx.b=x)
+        then print("xx.b = x\n")
+        else print("xx.b != x\n")
+    end
+    
+    
+    
+end

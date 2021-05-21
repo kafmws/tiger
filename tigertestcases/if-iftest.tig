@@ -1,0 +1,10 @@
+let
+    type a = int
+in
+    if(1>3)
+    then
+        if(2<3)
+        then print("1>3 && 2<3\n")
+        else print("1>3 && 2>=3\n")
+    else print("1<=3\n")
+end
