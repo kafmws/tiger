@@ -91,7 +91,7 @@ patchList joinPatch(patchList first, patchList second) {
   if (!first) return second;
   while (first->tail) first = first->tail;
   first->tail = second;
-  return first;  //?
+  return first;
 }
 
 /* patchList end */
@@ -430,6 +430,7 @@ Tr_exp Tr_RecordExp(Tr_expList fields) {
 }
 
 Tr_exp Tr_SeqExp(Tr_expList reverseSeqList) {
+  if (!reverseSeqList) return Tr_Nop();
   T_exp exp = NULL;
   while (reverseSeqList) {
     if (!reverseSeqList->head) continue;
@@ -437,7 +438,7 @@ Tr_exp Tr_SeqExp(Tr_expList reverseSeqList) {
                : toEx(reverseSeqList->head));
     reverseSeqList = reverseSeqList->tail;
   }
-  return reverseSeqList ? Tr_Ex(exp) : Tr_Nop();
+  return Tr_Ex(exp);
 }
 
 Tr_exp Tr_AssignExp(Tr_exp varE, Tr_exp valE) {

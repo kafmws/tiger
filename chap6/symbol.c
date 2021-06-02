@@ -60,8 +60,8 @@ static struct S_symbol_ marksym = {"<mark>", 0};
 
 static void *markspace = NULL;
 void S_beginScope(S_table t) {
-  if (!markspace) markspace = checked_malloc(1);
-  S_enter(t, &marksym, markspace);
+  // if (!markspace) markspace = checked_malloc(1);
+  S_enter(t, &marksym, markspace);// markspace == NULL, for dump
 }
 
 void S_endScope(S_table t) {
